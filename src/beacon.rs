@@ -20,7 +20,7 @@ fn get_temperature(lon: f64, lat: f64) -> Option<f32> {
     output.map(|str| str.parse::<f32>().ok()).flatten()
 }
 
-fn calc_locations(lastest_block_hash: &Hashed) -> Vec<geojson::Position> {
+fn choose_locations(lastest_block_hash: &Hashed) -> Vec<geojson::Position> {
     let Ok(collection) = TARGET_GEOJSON.parse::<FeatureCollection>() else {
         return Vec::new();
     };
@@ -46,7 +46,7 @@ fn calc_locations(lastest_block_hash: &Hashed) -> Vec<geojson::Position> {
 }
 
 pub fn get_beacon(history: &[Beacon], lastest_block_hash: &Hashed) -> Option<Beacon> {
-    let locations: Vec<geojson::Position> = calc_locations(lastest_block_hash);
+    let locations: Vec<geojson::Position> = choose_locations(lastest_block_hash);
     let sum: f32 = locations
         .iter()
         .map(|pos| get_temperature(pos[0], pos[1]))
