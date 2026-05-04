@@ -22,7 +22,7 @@ Here, data that is difficult to predict is referred to as a "beacon." Dawn uses 
 ### Installation
 ```bash
 # Clone the repository (or Download ZIP)
-git clone git@github.com:kotagit75/Dawn.git
+git clone https://github.com/kotagit75/Dawn.git
 
 # Navigate to the project directory
 cd Dawn
