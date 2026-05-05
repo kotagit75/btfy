@@ -10,7 +10,7 @@ pub struct Beacon {
     pub value: f32,
 }
 
-const TEMPERATURE_SCRIPT_PATH: &str = "beacon/temperature.sh";
+const TEMPERATURE_SCRIPT_PATH: &str = "beacon/temperature";
 const TARGET_GEOJSON: &str = include_str!("beacon/target.geojson");
 use std::sync::LazyLock;
 static TARGET_LOCATIONS: LazyLock<Vec<geojson::Position>> = LazyLock::new(|| {
