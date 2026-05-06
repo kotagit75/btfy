@@ -103,8 +103,8 @@ async fn handle_post_peer(
     extract::State((event_tx, _)): extract::State<(mpsc::Sender<Event>, watch::Receiver<State>)>,
     extract::Json(payload): extract::Json<PeerPayload>,
 ) -> response::Json<bool> {
-    match Ipv4Addr::from_str(&payload.ip) {
-        Ok(ip) => response::Json(event_tx.send(Event::AddPeer(Peer::new(ip))).await.is_ok()),
-        Err(_) => response::Json(false),
-    }
+    response::Json(match Ipv4Addr::from_str(&payload.ip) {
+        Ok(ip) => event_tx.send(Event::AddPeer(Peer::new(ip))).await.is_ok(),
+        Err(_) => false,
+    })
 }
