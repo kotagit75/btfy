@@ -49,11 +49,11 @@ Even without using an API, it is possible to conduct observations by placing sen
 # run
 ./target/release/dawn
 
-# get state
-curl localhost:8080/state
-
 # get balance
 curl localhost:8080/balance
+
+# get chain
+curl localhost:8080/chain
 
 # send transaction
 curl -X POST -H "Content-Type: application/json" -d "{'recipient':'{address}', 'amount': {amount}}" localhost:8080/tx
