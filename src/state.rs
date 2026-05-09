@@ -48,7 +48,7 @@ impl State {
             .iter()
             .flat_map(|t| t.tx_in.iter().map(|tx_in| tx_in.unspent_id))
             .collect::<Vec<_>>();
-        if tx_in_ids.iter().any(|id| !state_tx_in_ids.contains(id)) {
+        if tx_in_ids.iter().any(|id| state_tx_in_ids.contains(id)) {
             return (self.clone(), false);
         }
         (
