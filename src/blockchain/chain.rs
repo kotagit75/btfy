@@ -88,7 +88,6 @@ impl Chain {
             && generated_now
             && !is_valid_beacon(&block.beacon, &self.get_latest_block().hash)
         {
-            print!("aaa");
             return (self.clone(), false);
         }
 

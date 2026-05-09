@@ -87,7 +87,6 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
         Event::CompletedMineBlock(new_block) => {
             info!("completed mining block");
             let (chain, changed) = state.chain.add_block(new_block.clone(), true, true);
-            println!("changed: {}", changed);
             let new_state = State { chain, ..state };
             return (new_state, {
                 if changed {
