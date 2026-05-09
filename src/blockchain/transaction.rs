@@ -95,7 +95,7 @@ impl Transaction {
         })
     }
     pub fn verify_signature(&self) -> bool {
-        self.sender.clone().verify(
+        self.sender.verify(
             transaction_to_buf_for_signature(&self.sender, &self.out, self.tx_in.clone())
                 .as_slice(),
             &self.signature,
