@@ -12,7 +12,7 @@ exit 0
 ```bash
 #!/bin/bash
 
-API_KEY=""
+API_KEY="[your api key]"
 
 temperature=$(curl "https://api.openweathermap.org/data/2.5/weather?lat=$1&lon=$2&appid=$API_KEY" | jq .main.temp)
 echo -n $temperature
