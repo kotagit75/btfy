@@ -87,17 +87,17 @@ impl Transaction {
         tx_in: Vec<TransactionIn>,
         sk: &SK,
     ) -> Result<Self, ErrorStack> {
+        let signature = create_transaction_signature(sender, &out, &tx_in, sk)?;
         Ok(Self {
             sender: sender.clone(),
-            out: out.clone(),
-            tx_in: tx_in.clone(),
-            signature: create_transaction_signature(sender, &out, tx_in, sk)?,
+            out,
+            tx_in,
+            signature,
         })
     }
     pub fn verify_signature(&self) -> bool {
         self.sender.verify(
-            transaction_to_buf_for_signature(&self.sender, &self.out, self.tx_in.clone())
-                .as_slice(),
+            transaction_to_buf_for_signature(&self.sender, &self.out, &self.tx_in).as_slice(),
             &self.signature,
         )
     }
@@ -141,7 +141,7 @@ impl Transaction {
 fn transaction_to_buf_for_signature(
     sender: &Address,
     out: &[TransactionOut],
-    tx_in: Vec<TransactionIn>,
+    tx_in: &[TransactionIn],
 ) -> Vec<u8> {
     format!("{sender}{out:?}{tx_in:?}").as_bytes().to_vec()
 }
@@ -149,7 +149,7 @@ fn transaction_to_buf_for_signature(
 fn create_transaction_signature(
     sender: &Address,
     out: &[TransactionOut],
-    tx_in: Vec<TransactionIn>,
+    tx_in: &[TransactionIn],
     sk: &SK,
 ) -> Result<Signature, ErrorStack> {
     let data = transaction_to_buf_for_signature(sender, out, tx_in);
