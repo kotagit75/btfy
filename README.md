@@ -42,6 +42,7 @@ echo -n $temperature
 exit 0
 ```
 Even without using an API, it is possible to conduct observations by placing sensors on-site, for example.
+[Learn more examples](docs/temperature_script_example.md)
 ### Usage
 ```bash
 # run
