@@ -15,7 +15,13 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, watch};
 use tower_http::cors::{Any, CorsLayer};
 
-use crate::{blockchain::address::Address, p2p::Peer, state::State, update::Event, util::key::PK};
+use crate::{
+    blockchain::{address::Address, chain::Chain},
+    p2p::Peer,
+    state::State,
+    update::Event,
+    util::key::PK,
+};
 
 const API_PORT: u16 = 8080;
 const CORS_ALLOW_PORT: u16 = 3000;
@@ -30,6 +36,7 @@ pub async fn init_api(event_tx: mpsc::Sender<Event>, state_rx: watch::Receiver<S
     let app = Router::new()
         .route("/state", get(handle_get_state))
         .route("/address", get(handle_get_address))
+        .route("/chain", get(handle_get_chain))
         .route("/balance", get(handle_get_balance))
         .route("/balance/{address}", get(handle_get_balance_with_address))
         .route("/latest-beacon", get(handle_get_latest_beacon))
@@ -53,6 +60,12 @@ async fn handle_get_address(
     extract::State((_, state_rx)): extract::State<(mpsc::Sender<Event>, watch::Receiver<State>)>,
 ) -> String {
     state_rx.borrow().clone().address.der
+}
+
+async fn handle_get_chain(
+    extract::State((_, state_rx)): extract::State<(mpsc::Sender<Event>, watch::Receiver<State>)>,
+) -> response::Json<Chain> {
+    response::Json(state_rx.borrow().clone().chain)
 }
 
 async fn handle_get_balance(
