@@ -25,10 +25,9 @@ use crate::{
 };
 
 pub async fn init_api(event_tx: mpsc::Sender<Event>, state_rx: watch::Receiver<State>) {
+    let allowed_origin = format!("http://localhost:{}", CONFIG.cors_allow_port);
     let cors = CorsLayer::new()
-        .allow_origin([format!("http://localhost:{}", CONFIG.cors_allow_port)
-            .parse::<HeaderValue>()
-            .unwrap()])
+        .allow_origin([allowed_origin.parse::<HeaderValue>().unwrap()])
         .allow_methods([Method::GET, Method::POST])
         .allow_headers(Any);
 
@@ -48,6 +47,7 @@ pub async fn init_api(event_tx: mpsc::Sender<Event>, state_rx: watch::Receiver<S
     );
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     info!("API server is running on http://{}/", addr);
+    info!("API server allows CORS for {}", allowed_origin);
     axum::serve(listener, app).await.unwrap();
 }
 
