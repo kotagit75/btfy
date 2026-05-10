@@ -25,8 +25,8 @@ pub fn load_key() -> Result<SK, ()> {
         })
     } else {
         info!("generating node key");
-        match generate_pk_and_sk(NODE_KEY_BITS) {
-            Ok((_, sk)) => {
+        match generate_key() {
+            Ok(sk) => {
                 save_key(&sk).map_err(|_| {
                     error!("failed to save node key");
                     ()
