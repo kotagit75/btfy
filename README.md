@@ -64,7 +64,7 @@ curl -X POST -H "Content-Type: application/json" -d "{'recipient':'{address}', '
 curl -X POST -H "Content-Type: application/json" -d '{"ip":"{IP Addr}"}' localhost:8080/peer
 ```
 
-## :globe_with_meridians: Environment variable
+## :globe_with_meridians: Environment variables
 | Name | Description | Default |
 | :--- | :--- | :--- |
 | `API_PORT` | API server port number | `8080` |
