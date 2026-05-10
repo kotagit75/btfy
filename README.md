@@ -65,7 +65,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"ip":"{IP Addr}"}' localho
 ```
 
 ## 📍 Locations which is collected temperature data
-Dawn gets temperature data from multiple regions. The regions are as follows:
+Dawn gets temperature data from multiple locations. The locations are as follows:
 - Hakodate `140.7290611111111, 41.76869722222222`
 - Hirosaki `140.421492, 40.61632`
 - Sendai `140.8694166666667, 38.26819444444445`
