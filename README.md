@@ -64,6 +64,7 @@ curl -X POST -H "Content-Type: application/json" -d "{'recipient':'{address}', '
 curl -X POST -H "Content-Type: application/json" -d '{"ip":"{IP Addr}"}' localhost:8080/peer
 ```
 
+## :globe_with_meridians: Environment variable
 ## 📍 Locations which is collected temperature data
 Dawn gets temperature data from multiple locations. The locations are as follows:
 - Hakodate `140.7290611111111, 41.76869722222222`
