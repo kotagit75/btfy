@@ -97,16 +97,12 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
             });
         }
         Event::P2PMessage(P2PMessage::QueryAll) => {
-            return (
-                state.clone(),
-                Effect::BroadcastResponseBlocks(state.chain.blocks.clone()),
-            );
+            let chain = state.chain.blocks.clone();
+            return (state, Effect::BroadcastResponseBlocks(chain));
         }
         Event::P2PMessage(P2PMessage::QueryLatest) => {
-            return (
-                state.clone(),
-                Effect::BroadcastResponseBlocks(vec![state.chain.get_latest_block()]),
-            );
+            let blocks = vec![state.chain.get_latest_block()];
+            return (state, Effect::BroadcastResponseBlocks(blocks));
         }
         Event::P2PMessage(P2PMessage::ResponseBlockChain(blocks)) => {
             let Some(received_lastest_block) = blocks.last() else {
