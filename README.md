@@ -52,6 +52,7 @@ Even without using an API, it is possible to conduct observations by placing sen
 
 # get balance
 curl localhost:8080/balance
+curl localhost:8080/balance/{address}
 
 # get chain
 curl localhost:8080/chain
