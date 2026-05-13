@@ -33,7 +33,11 @@ fn get_temperature(lon: f64, lat: f64) -> Option<f32> {
     let output = run_command_and_get_output(
         Command::new(TEMPERATURE_SCRIPT_PATH).args([lat.to_string(), lon.to_string()]),
     );
-    output.map(|str| str.parse::<f32>().ok()).flatten()
+    let result = output.map(|str| str.parse::<f32>().ok()).flatten();
+    if result.is_none() {
+        error!("failed to retrieve the temperature");
+    }
+    result
 }
 
 fn choose_locations(lastest_block_hash: &Hashed) -> Vec<geojson::Position> {
