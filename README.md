@@ -7,6 +7,7 @@ Dawn is a decentralized currency that relies on the randomness of the weather an
 
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat)](LICENSE)
 ![Rust](https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white)
+![GitHub Actions Results](https://github.com/kotagit75/Dawn/actions/workflows/test.yaml/badge.svg)
 
 > [!NOTE]
 > Dawn is currently in active development. The API and features may change without notice.
