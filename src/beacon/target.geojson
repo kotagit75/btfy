@@ -3,77 +3,333 @@
   "features": [
     {
       "type": "Feature",
+      "properties": {
+        "Name": "Wakkanai Airport"
+      },
       "geometry": {
         "type": "Point",
-        "coordinates": [130.401689, 33.590183, 0]
-      },
-      "properties": {}
+        "coordinates": [141.7974528, 45.3995654]
+      }
     },
     {
       "type": "Feature",
+      "properties": {
+        "Name": "Asahikawa Airport"
+      },
       "geometry": {
         "type": "Point",
-        "coordinates": [140.729061, 41.768697, 0]
-      },
-      "properties": {}
+        "coordinates": [142.446865, 43.67147493]
+      }
     },
     {
       "type": "Feature",
+      "properties": {
+        "Name": "Kushiro Airport"
+      },
       "geometry": {
         "type": "Point",
-        "coordinates": [139.63438781464149, 35.45023396820895, 0]
+        "coordinates": [144.1962358, 43.04503509]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Obihiro Airport"
       },
-      "properties": {}
-    },
-    {
-      "type": "Feature",
-      "geometry": { "type": "Point", "coordinates": [135.76815, 35.011564, 0] },
-      "properties": {}
-    },
-    {
-      "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [140.869417, 38.268194, 0]
-      },
-      "properties": {}
+        "coordinates": [143.2177867, 42.73121032]
+      }
     },
     {
       "type": "Feature",
+      "properties": {
+        "Name": "Sapporo Okadama Airport"
+      },
       "geometry": {
         "type": "Point",
-        "coordinates": [135.195631, 34.690081, 0]
+        "coordinates": [141.3802179, 43.11577495]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "New Chitose Airport"
       },
-      "properties": {}
-    },
-    {
-      "type": "Feature",
-      "geometry": { "type": "Point", "coordinates": [136.906558, 35.18145, 0] },
-      "properties": {}
-    },
-    {
-      "type": "Feature",
       "geometry": {
         "type": "Point",
-        "coordinates": [132.455306, 34.385289, 0]
-      },
-      "properties": {}
+        "coordinates": [141.6860269, 42.77899571]
+      }
     },
     {
       "type": "Feature",
+      "properties": {
+        "Name": "Hakodate Airport"
+      },
       "geometry": {
         "type": "Point",
-        "coordinates": [140.421492, 40.61632, 0]
-      },
-      "properties": {}
+        "coordinates": [140.8161369, 41.7754762]
+      }
     },
     {
       "type": "Feature",
+      "properties": {
+        "Name": "Aomori Airport"
+      },
       "geometry": {
         "type": "Point",
-        "coordinates": [130.5571231843784, 31.596708556139077, 0]
+        "coordinates": [140.6902087, 40.73545867]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Akita Airport"
       },
-      "properties": {}
+      "geometry": {
+        "type": "Point",
+        "coordinates": [140.2176736, 39.61432074]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Hanamaki Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [141.1384845, 39.42148821]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Sendai Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [140.9170924, 38.13993289]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Yamagata Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [140.3703334, 38.41209636]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Fukushima Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [140.4282886, 37.2284081]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Niigata Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [139.1114496, 37.95505405]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Matsumoto Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [137.9264258, 36.16462046]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Narita International Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [140.3848188, 35.77073692]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Tokyo International Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [139.7791314, 35.548171]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Shizuoka Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [138.1853326, 34.79653615]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Chubu Centrair International Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [136.8101604, 34.85720324]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Osaka Itami Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [135.4381271, 34.78606811]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Kansai International Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [135.2367959, 34.43197865]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Kobe Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [135.2267252, 34.63507139]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Takamatsu Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [134.0146539, 34.21484194]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Kochi Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [133.6739953, 33.5476357]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Hiroshima Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [132.9207516, 34.43731367]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Matsuyama Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [132.7003022, 33.8277126]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Yamaguchi Ube Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [131.2786026, 33.93127097]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Fukuoka Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [130.4500511, 33.58561376]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Nagasaki Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [129.9170527, 32.91489785]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Oita Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [131.7362115, 33.47958263]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Kumamoto Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [130.8588813, 32.83497974]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Kagoshima Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [130.7202485, 31.80072839]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name": "Naha Airport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [127.6467932, 26.19990739]
+      }
     }
   ]
 }
