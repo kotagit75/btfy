@@ -7,7 +7,7 @@ use crate::util::{command::run_command_and_get_output, hash::Hashed};
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Beacon {
-    pub value: f32,
+    pub values: Vec<f32>,
 }
 
 const TEMPERATURE_SCRIPT_PATH: &str = "beacon/temperature";
@@ -54,18 +54,27 @@ fn choose_locations(lastest_block_hash: &Hashed) -> Vec<geojson::Position> {
 pub fn get_beacon(lastest_block_hash: &Hashed) -> Option<Beacon> {
     let locations: Vec<geojson::Position> = choose_locations(lastest_block_hash);
     info!("start getting beacon");
-    let sum: f32 = locations
+    let temperatures: Vec<_> = locations
         .iter()
         .map(|pos| get_temperature(pos[0], pos[1]))
-        .flatten()
-        .sum();
+        .collect();
+    if temperatures.iter().any(|t| t.is_none()) {
+        info!("failed to get beacon");
+        return None;
+    }
     info!("completed getting beacon");
-    Some(Beacon { value: sum })
+    Some(Beacon {
+        values: temperatures.iter().flatten().cloned().collect(),
+    })
 }
 
 pub fn is_valid_beacon(target_beacon: &Beacon, lastest_block_hash: &Hashed) -> bool {
     match get_beacon(lastest_block_hash) {
-        Some(beacon) => (beacon.value - target_beacon.value).abs() <= 0.5,
+        Some(beacon) => beacon
+            .values
+            .iter()
+            .zip(target_beacon.values.iter())
+            .all(|(a, b)| (a - b).abs() <= 0.5),
         None => false,
     }
 }

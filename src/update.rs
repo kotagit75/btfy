@@ -175,6 +175,7 @@ pub async fn run_effect(state: State, event_tx: mpsc::Sender<Event>, effect: Eff
         Effect::MineBlock(transactions) => {
             info!("start mining block");
             let Some(beacon) = get_beacon(&state.chain.get_latest_block().hash) else {
+                info!("stopping mining");
                 return;
             };
             let Ok(block) = state.chain.generate_next_block(
@@ -229,7 +230,7 @@ mod tests {
             index: prev.index + 1,
             timestamp: prev.timestamp + 1,
             transactions: vec![coinbase_transaction(miner)],
-            beacon: Beacon { value: 1.0 },
+            beacon: Beacon { values: Vec::new() },
             vdf_solution: vec![],
             previous_hash: prev.hash,
             issuer: miner.clone(),

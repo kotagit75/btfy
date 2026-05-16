@@ -176,13 +176,6 @@ impl Chain {
             .map(|tx| tx.amount)
             .sum()
     }
-
-    pub fn get_beacon_history(&self) -> Vec<Beacon> {
-        self.blocks
-            .iter()
-            .map(|block| block.beacon.clone())
-            .collect()
-    }
 }
 
 pub fn is_valid_new_block(block: &Block, previous_block: &Block) -> bool {
@@ -211,7 +204,9 @@ mod tests {
             index: prev.index + 1,
             timestamp: prev.timestamp + 1,
             transactions: txs,
-            beacon: Beacon { value: beacon },
+            beacon: Beacon {
+                values: vec![beacon],
+            },
             vdf_solution: vec![],
             previous_hash: prev.hash,
             issuer: prev.issuer.clone(),
@@ -305,22 +300,6 @@ mod tests {
 
         assert_eq!(c.get_balance(&a), 50);
         assert_eq!(c.get_balance(&b), 50);
-    }
-
-    #[test]
-    fn get_beacon_history_collects_all_blocks() {
-        let (miner, _) = keypair();
-        let g = genesis_block();
-        let b1 = dummy_block(&g, vec![coinbase_transaction(&miner)], 1.25);
-        let b2 = dummy_block(&b1, vec![coinbase_transaction(&miner)], 2.5);
-        let c = Chain {
-            blocks: vec![g, b1, b2],
-        };
-
-        let h = c.get_beacon_history();
-        assert_eq!(h.len(), 3);
-        assert!((h[1].value - 1.25).abs() < f32::EPSILON);
-        assert!((h[2].value - 2.5).abs() < f32::EPSILON);
     }
 
     #[test]

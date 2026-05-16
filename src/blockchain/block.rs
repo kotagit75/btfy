@@ -219,7 +219,7 @@ pub fn genesis_block() -> Block {
         0,
         0,
         Vec::new(),
-        Beacon { value: 0.0 },
+        Beacon { values: Vec::new() },
         Vec::new(),
         &pk,
         [0; 32],
