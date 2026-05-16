@@ -1,6 +1,7 @@
 <div align="center">
     <img src="assets/logo.svg" height=200>
-    <h1>Dawn Energy-Efficient Cryptocurrency By "Proof of Weather"</h1>
+    <h1>Dawn</h1>
+    <h2>Energy-Efficient Cryptocurrency By "Proof of Weather"</h2>
 </div>
 
 Dawn is a cryptocurrency that relies on the randomness of the weather and cryptographic proofs as its foundation.
