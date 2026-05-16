@@ -9,6 +9,7 @@ use tokio::sync::{mpsc, watch};
 
 use crate::{
     node::save_chain,
+    state::State,
     update::{run_effect, update},
 };
 
@@ -26,19 +27,7 @@ pub mod util;
 async fn main() {
     logger::init_with_level(Level::Info).unwrap();
 
-    info!("loading node key");
-    let Ok(sk) = node::load_or_generate_key() else {
-        error!("failed to load node key");
-        return;
-    };
-    info!("loading chain");
-    let Ok(chain) = node::load_or_generate_chain() else {
-        error!("failed to load chain");
-        return;
-    };
-    info!("initializing state");
-    let Ok(mut state) = state::State::new(sk, chain) else {
-        error!("failed to initialize state");
+    let Some(mut state) = init_state() else {
         return;
     };
     debug!("address: {}", state.address.der);
@@ -71,4 +60,23 @@ async fn main() {
             run_effect(new_state, event_tx_clone, effect).await;
         });
     }
+}
+
+fn init_state() -> Option<State> {
+    info!("loading node key");
+    let Ok(sk) = node::load_or_generate_key() else {
+        error!("failed to load node key");
+        return None;
+    };
+    info!("loading chain");
+    let Ok(chain) = node::load_or_generate_chain() else {
+        error!("failed to load chain");
+        return None;
+    };
+    info!("initializing state");
+    let Ok(state) = state::State::new(sk, chain) else {
+        error!("failed to initialize state");
+        return None;
+    };
+    Some(state)
 }
