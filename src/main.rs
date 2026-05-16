@@ -34,27 +34,19 @@ async fn main() {
 
     let (event_tx, mut event_rx) = mpsc::channel(256);
     let (state_tx, state_rx) = watch::channel(state.clone());
-    let event_tx_clone = event_tx.clone();
-    tokio::spawn(async move {
-        api::init_api(event_tx_clone, state_rx).await;
-    });
-    let event_tx_clone = event_tx.clone();
-    tokio::spawn(async move {
-        p2p::init_p2p(event_tx_clone).await;
-    });
+    init_p2p_and_api(state_rx, event_tx.clone()).await;
 
     let _ = event_tx.send(update::Event::MineBlock).await;
-
-    let previous_chain = state.chain.clone();
+    let mut previous_chain = state.chain.clone();
 
     while let Some((new_state, effect)) = event_rx.recv().await.map(|event| update(event, state)) {
         state = new_state.clone();
-        let _ = state_tx.send(state.clone());
-        let event_tx_clone = event_tx.clone();
-
         if state.chain != previous_chain {
             let _ = save_chain(&state.chain).inspect_err(|e| error!("failed to save chain: {}", e));
+            previous_chain = state.chain.clone();
         }
+        let _ = state_tx.send(state.clone());
+        let event_tx_clone = event_tx.clone();
 
         tokio::spawn(async move {
             run_effect(new_state, event_tx_clone, effect).await;
@@ -79,4 +71,17 @@ fn init_state() -> Option<State> {
         return None;
     };
     Some(state)
+}
+
+async fn init_p2p_and_api(
+    state_rx: watch::Receiver<State>,
+    event_tx: mpsc::Sender<update::Event>,
+) -> () {
+    let event_tx_clone = event_tx.clone();
+    tokio::spawn(async move {
+        api::init_api(event_tx_clone, state_rx).await;
+    });
+    tokio::spawn(async move {
+        p2p::init_p2p(event_tx).await;
+    });
 }
