@@ -67,6 +67,15 @@ impl TransactionOut {
     }
 }
 
+impl TransactionIn {
+    pub fn get_amount(&self, unspent_transactions: &[UnspentTransaction]) -> Option<u64> {
+        unspent_transactions
+            .iter()
+            .find(|ut| ut.id == self.unspent_id)
+            .map(|ut| ut.amount)
+    }
+}
+
 impl Transaction {
     pub fn new(
         sender: Address,
@@ -102,8 +111,22 @@ impl Transaction {
         )
     }
 
+    /*
+     * This method calculates the total amount of the transaction output.
+     */
     pub fn total_amount(&self) -> u64 {
         self.out.iter().map(|txout| txout.amount).sum()
+    }
+
+    /*
+     * This method calculates the total amount of the transaction input.
+     */
+    fn calc_total_input_amount(&self, unspent_transactions: &[UnspentTransaction]) -> u64 {
+        self.tx_in
+            .iter()
+            .map(|tx_in| tx_in.get_amount(unspent_transactions))
+            .flatten()
+            .sum()
     }
 
     pub fn get_unspent_transactions(
@@ -127,7 +150,7 @@ impl Transaction {
         (new_unspent, new_id)
     }
 
-    pub fn is_valid(&self) -> bool {
+    pub fn is_valid(&self, unspent_transactions: &[UnspentTransaction]) -> bool {
         self.verify_signature()
             && self.total_amount() > 0
             && is_valid_address(&self.sender)
@@ -135,6 +158,11 @@ impl Transaction {
                 .out
                 .iter()
                 .all(|txout| is_valid_address(&txout.address))
+            && self.calc_total_input_amount(unspent_transactions) == self.total_amount()
+            && self
+                .tx_in
+                .iter()
+                .all(|tx_in| tx_in.get_amount(unspent_transactions).is_some())
     }
 }
 
@@ -263,8 +291,14 @@ mod tests {
         )
         .unwrap();
 
+        let unspent_transactions = vec![UnspentTransaction {
+            id: 1,
+            address: sender,
+            amount: 10,
+        }];
+
         assert!(tx.verify_signature());
-        assert!(tx.is_valid());
+        assert!(tx.is_valid(&unspent_transactions));
     }
 
     #[test]
@@ -283,9 +317,15 @@ mod tests {
         )
         .unwrap();
 
+        let unspent_transactions = vec![UnspentTransaction {
+            id: 1,
+            address: sender,
+            amount: 10,
+        }];
+
         tx.out[0].amount = 11;
         assert!(!tx.verify_signature());
-        assert!(!tx.is_valid());
+        assert!(!tx.is_valid(&unspent_transactions));
     }
 
     #[test]
@@ -419,5 +459,31 @@ mod tests {
 
         let selected_insufficient = flex_unspent_transactions(100, utxos);
         assert_eq!(selected_insufficient.len(), 3);
+    }
+
+    #[test]
+    fn is_invalid_when_input_output_amounts_do_not_match() {
+        let (sender, sk) = keypair();
+        let (recipient, _) = keypair();
+
+        let tx = Transaction::new_with_creating_signature(
+            &sender,
+            vec![TransactionOut {
+                address: recipient,
+                amount: 10,
+            }],
+            vec![TransactionIn { unspent_id: 1 }],
+            &sk,
+        )
+        .unwrap();
+
+        let unspent_transactions = vec![UnspentTransaction {
+            id: 1,
+            address: sender,
+            amount: 9,
+        }];
+
+        assert!(tx.verify_signature());
+        assert!(!tx.is_valid(&unspent_transactions));
     }
 }

@@ -71,10 +71,9 @@ impl Chain {
 
     pub fn is_valid(&self) -> bool {
         let is_valid_genesis_block = self.blocks.first().cloned() == Some(genesis_block());
-        let is_valid_chain = self
-            .blocks
-            .windows(2)
-            .all(|windows| is_valid_new_block(&windows[0], &windows[1]));
+        let is_valid_chain = self.blocks.windows(2).all(|windows| {
+            is_valid_new_block(&windows[0], &windows[1], &self.get_unspent_transactions().0)
+        });
         is_valid_genesis_block && is_valid_chain
     }
 
@@ -96,7 +95,11 @@ impl Chain {
             return (self.clone(), false);
         }
 
-        if is_valid_new_block(&block, &self.get_latest_block()) {
+        if is_valid_new_block(
+            &block,
+            &self.get_latest_block(),
+            &self.get_unspent_transactions().0,
+        ) {
             (
                 Self {
                     blocks: self
@@ -183,12 +186,16 @@ impl Chain {
     }
 }
 
-pub fn is_valid_new_block(block: &Block, previous_block: &Block) -> bool {
+pub fn is_valid_new_block(
+    block: &Block,
+    previous_block: &Block,
+    unspent_transactions: &[UnspentTransaction],
+) -> bool {
     block.index == previous_block.index + 1
         && block.timestamp > previous_block.timestamp
         && block.previous_hash == previous_block.hash
         && block.calculate_hash() == block.hash
-        && block.is_valid()
+        && block.is_valid(unspent_transactions)
 }
 
 #[cfg(test)]

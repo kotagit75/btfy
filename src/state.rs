@@ -28,7 +28,7 @@ impl State {
     }
 
     pub fn add_transaction(&self, transaction: &Transaction) -> (Self, bool) {
-        if !(transaction.is_valid()
+        if !(transaction.is_valid(&self.chain.get_unspent_transactions().0)
             && transaction.tx_in.iter().all(|tx_in| {
                 self.chain
                     .find_unspent_transaction(tx_in.unspent_id)
