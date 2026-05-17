@@ -99,16 +99,16 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
             return (state, Effect::BroadcastResponseBlocks(blocks));
         }
         Event::P2PMessage(P2PMessage::ResponseBlockChain(blocks)) => {
-            let Some(received_lastest_block) = blocks.last() else {
+            let Some(received_latest_block) = blocks.last() else {
                 return (state, Effect::None);
             };
-            let held_lastest_block = state.chain.get_latest_block();
-            if received_lastest_block.index > held_lastest_block.index {
-                if received_lastest_block.previous_hash == held_lastest_block.hash {
+            let held_latest_block = state.chain.get_latest_block();
+            if received_latest_block.index > held_latest_block.index {
+                if received_latest_block.previous_hash == held_latest_block.hash {
                     let (new_chain, changed) =
                         state
                             .chain
-                            .add_block(received_lastest_block.clone(), false, true);
+                            .add_block(received_latest_block.clone(), false, true);
                     return (
                         State {
                             chain: new_chain,
@@ -116,9 +116,7 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
                         },
                         {
                             if changed {
-                                Effect::BroadcastResponseBlocks(vec![
-                                    received_lastest_block.clone(),
-                                ])
+                                Effect::BroadcastResponseBlocks(vec![received_latest_block.clone()])
                             } else {
                                 Effect::None
                             }

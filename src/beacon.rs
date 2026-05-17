@@ -40,9 +40,9 @@ fn get_temperature(lon: f64, lat: f64) -> Option<f32> {
     result
 }
 
-fn choose_locations(lastest_block_hash: &Hashed) -> Vec<geojson::Position> {
+fn choose_locations(latest_block_hash: &Hashed) -> Vec<geojson::Position> {
     let len = TARGET_LOCATIONS.len();
-    lastest_block_hash
+    latest_block_hash
         .iter()
         .map(|i| (*i as usize) % len)
         .map(|i| TARGET_LOCATIONS.get(i))
@@ -51,8 +51,8 @@ fn choose_locations(lastest_block_hash: &Hashed) -> Vec<geojson::Position> {
         .collect()
 }
 
-pub fn get_beacon(lastest_block_hash: &Hashed) -> Option<Beacon> {
-    let locations: Vec<geojson::Position> = choose_locations(lastest_block_hash);
+pub fn get_beacon(latest_block_hash: &Hashed) -> Option<Beacon> {
+    let locations: Vec<geojson::Position> = choose_locations(latest_block_hash);
     info!("start getting beacon");
     let temperatures: Vec<_> = locations
         .iter()
@@ -68,8 +68,8 @@ pub fn get_beacon(lastest_block_hash: &Hashed) -> Option<Beacon> {
     })
 }
 
-pub fn is_valid_beacon(target_beacon: &Beacon, lastest_block_hash: &Hashed) -> bool {
-    match get_beacon(lastest_block_hash) {
+pub fn is_valid_beacon(target_beacon: &Beacon, latest_block_hash: &Hashed) -> bool {
+    match get_beacon(latest_block_hash) {
         Some(beacon) => beacon
             .values
             .iter()
