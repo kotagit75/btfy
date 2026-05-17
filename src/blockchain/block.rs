@@ -115,12 +115,12 @@ impl Block {
         self.index
     }
 
-    pub fn is_valid(&self) -> bool {
+    pub fn is_valid(&self, unspent_transactions: &[UnspentTransaction]) -> bool {
         if let Some((coinbase, normal)) = self.transactions.split_first() {
             self.verify_signature()
                 && self.verify_vdf_solution()
                 && is_valid_coinbase_transaction(coinbase, self.get_block_height())
-                && normal.iter().all(|t| t.is_valid())
+                && normal.iter().all(|t| t.is_valid(unspent_transactions))
         } else {
             false
         }
