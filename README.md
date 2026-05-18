@@ -50,10 +50,10 @@ curl localhost:8080/balance/[address]
 curl localhost:8080/chain
 
 # send transaction
-curl -X POST -H "Content-Type: application/json" -d "{'recipient':'[address]', 'amount': [amount]}" localhost:8080/tx
+curl -X POST -H "Content-Type: application/json" -d '{"recipient":"[address]", "send_amount": [amount], "fee": [fee]}' localhost:8080/tx
 
 # add peer
-curl -X POST -H "Content-Type: application/json" -d '{"ip":"[IP Addr]"}' localhost:8080/peer
+curl -X POST -H "Content-Type: application/json" -d "{'ip':'[IP Addr]'}" localhost:8080/peer
 ```
 
 ## :globe_with_meridians: Environment variables
