@@ -73,6 +73,7 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
         Event::MineBlock => {
             let mut sorted_transactions: Vec<_> = state.transactions.clone();
             sorted_transactions.sort_by_key(|tx| tx.fee);
+            sorted_transactions.reverse();
             let transactions_to_mine: Vec<_> = sorted_transactions
                 .iter()
                 .take(MAX_TRANSACTIONS_PER_BLOCK)
