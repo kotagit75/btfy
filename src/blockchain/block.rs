@@ -18,7 +18,7 @@ use crate::{
     },
 };
 
-const MAX_TRANSACTIONS_PER_BLOCK: usize = 100;
+pub const MAX_TRANSACTIONS_PER_BLOCK: usize = 100;
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Block {

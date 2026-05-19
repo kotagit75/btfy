@@ -4,7 +4,7 @@ use crate::{
     beacon::get_beacon,
     blockchain::{
         address::{Address, is_valid_address},
-        block::Block,
+        block::{Block, MAX_TRANSACTIONS_PER_BLOCK},
         chain::Chain,
         transaction::Transaction,
     },
@@ -71,12 +71,19 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
             }
         }
         Event::MineBlock => {
+            let transactions_to_mine: Vec<_> = state
+                .transactions
+                .iter()
+                .take(MAX_TRANSACTIONS_PER_BLOCK)
+                .cloned()
+                .collect();
+
             return (
                 State {
                     transactions: Vec::new(),
                     ..state
                 },
-                Effect::MineBlock(state.transactions),
+                Effect::MineBlock(transactions_to_mine),
             );
         }
         Event::CompletedMineBlock(new_block) => {
