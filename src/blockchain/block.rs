@@ -18,6 +18,8 @@ use crate::{
     },
 };
 
+pub const MAX_TRANSACTIONS_PER_BLOCK: usize = 100;
+
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Block {
     pub index: u64,
@@ -116,6 +118,9 @@ impl Block {
     }
 
     pub fn is_valid(&self, unspent_transactions: &[UnspentTransaction]) -> bool {
+        if self.transactions.len() > MAX_TRANSACTIONS_PER_BLOCK {
+            return false;
+        }
         if let Some((coinbase, normal)) = self.transactions.split_first() {
             self.verify_signature()
                 && self.verify_vdf_solution()
@@ -294,5 +299,25 @@ mod tests {
         let (next, _) = b.get_unspent_transactions((prev, 2));
 
         assert!(next.iter().any(|u| u.address == miner && u.amount == 2));
+    }
+
+    #[test]
+    fn is_invalid_when_too_many_transactions() {
+        let (miner, _) = keypair();
+        let transactions = vec![coinbase_transaction(&miner, 1); MAX_TRANSACTIONS_PER_BLOCK + 1];
+
+        let block = Block {
+            index: 1,
+            timestamp: 1,
+            transactions,
+            beacon: Beacon { values: vec![] },
+            vdf_solution: vec![],
+            previous_hash: [0; 32],
+            issuer: miner,
+            signature: vec![],
+            hash: [1; 32],
+        };
+
+        assert!(!block.is_valid(&[]));
     }
 }

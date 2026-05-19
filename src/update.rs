@@ -4,7 +4,7 @@ use crate::{
     beacon::get_beacon,
     blockchain::{
         address::{Address, is_valid_address},
-        block::Block,
+        block::{Block, MAX_TRANSACTIONS_PER_BLOCK},
         chain::Chain,
         transaction::Transaction,
     },
@@ -71,12 +71,19 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
             }
         }
         Event::MineBlock => {
+            let transactions_to_mine: Vec<_> = state
+                .transactions
+                .iter()
+                .take(MAX_TRANSACTIONS_PER_BLOCK)
+                .cloned()
+                .collect();
+
             return (
                 State {
                     transactions: Vec::new(),
                     ..state
                 },
-                Effect::MineBlock(state.transactions),
+                Effect::MineBlock(transactions_to_mine),
             );
         }
         Event::CompletedMineBlock(new_block) => {
@@ -386,5 +393,35 @@ mod tests {
             _ => panic!("expected BroadcastResponseTransactions"),
         }
         assert_eq!(next.transactions[0].fee, 2);
+    }
+
+    #[test]
+    fn mine_block_limits_transactions_to_max() {
+        let mut state = funded_state();
+        let txs: Vec<Transaction> = (0..(MAX_TRANSACTIONS_PER_BLOCK + 5))
+            .map(|i| Transaction {
+                sender: state.address.clone(),
+                out: Vec::new(),
+                tx_in: Vec::new(),
+                fee: i as u64,
+                signature: Vec::new(),
+            })
+            .collect();
+        state.transactions = txs;
+
+        let (next, effect) = update(Event::MineBlock, state);
+
+        assert!(next.transactions.is_empty());
+        match effect {
+            Effect::MineBlock(mined) => {
+                assert_eq!(mined.len(), MAX_TRANSACTIONS_PER_BLOCK);
+                assert_eq!(mined.first().unwrap().fee, 0);
+                assert_eq!(
+                    mined.last().unwrap().fee,
+                    (MAX_TRANSACTIONS_PER_BLOCK - 1) as u64
+                );
+            }
+            _ => panic!("expected MineBlock effect"),
+        }
     }
 }
