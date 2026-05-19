@@ -71,8 +71,10 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
             }
         }
         Event::MineBlock => {
-            let transactions_to_mine: Vec<_> = state
-                .transactions
+            let mut sorted_transactions: Vec<_> = state.transactions.clone();
+            sorted_transactions.sort_by_key(|tx| tx.fee);
+            sorted_transactions.reverse();
+            let transactions_to_mine: Vec<_> = sorted_transactions
                 .iter()
                 .take(MAX_TRANSACTIONS_PER_BLOCK)
                 .cloned()
@@ -396,9 +398,10 @@ mod tests {
     }
 
     #[test]
-    fn mine_block_limits_transactions_to_max() {
+    fn mine_block_limits_transactions_to_max_and_prioritizes_fees() {
         let mut state = funded_state();
-        let txs: Vec<Transaction> = (0..(MAX_TRANSACTIONS_PER_BLOCK + 5))
+        let total = MAX_TRANSACTIONS_PER_BLOCK + 5;
+        let txs: Vec<Transaction> = (0..total)
             .map(|i| Transaction {
                 sender: state.address.clone(),
                 out: Vec::new(),
@@ -415,11 +418,13 @@ mod tests {
         match effect {
             Effect::MineBlock(mined) => {
                 assert_eq!(mined.len(), MAX_TRANSACTIONS_PER_BLOCK);
-                assert_eq!(mined.first().unwrap().fee, 0);
-                assert_eq!(
-                    mined.last().unwrap().fee,
-                    (MAX_TRANSACTIONS_PER_BLOCK - 1) as u64
-                );
+
+                let expected_highest = (total - 1) as u64;
+                let expected_lowest = (total - MAX_TRANSACTIONS_PER_BLOCK) as u64;
+
+                assert_eq!(mined.first().unwrap().fee, expected_highest);
+                assert_eq!(mined.last().unwrap().fee, expected_lowest);
+                assert!(mined.windows(2).all(|w| w[0].fee >= w[1].fee));
             }
             _ => panic!("expected MineBlock effect"),
         }
