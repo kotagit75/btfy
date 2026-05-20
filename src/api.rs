@@ -32,12 +32,12 @@ pub async fn init_api(event_tx: mpsc::Sender<Event>, state_rx: watch::Receiver<S
         .allow_headers(Any);
 
     let app = Router::new()
-        .route("/address", get(handle_get_address))
-        .route("/chain", get(handle_get_chain))
-        .route("/balance", get(handle_get_balance))
-        .route("/balance/{address}", get(handle_get_balance_with_address))
-        .route("/tx", post(handle_post_transaction))
-        .route("/peer", post(handle_post_peer))
+        .route("/address", get(handle_query_address))
+        .route("/chain", get(handle_query_chain))
+        .route("/balance", get(handle_query_balance))
+        .route("/balance/{address}", get(handle_query_balance_with_address))
+        .route("/tx", post(handle_command_transaction))
+        .route("/peer", post(handle_command_peer))
         .with_state((event_tx, state_rx))
         .layer(cors);
     let addr = SocketAddr::new(
@@ -50,26 +50,26 @@ pub async fn init_api(event_tx: mpsc::Sender<Event>, state_rx: watch::Receiver<S
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn handle_get_address(
+async fn handle_query_address(
     extract::State((_, state_rx)): extract::State<(mpsc::Sender<Event>, watch::Receiver<State>)>,
 ) -> String {
     state_rx.borrow().clone().address.der
 }
 
-async fn handle_get_chain(
+async fn handle_query_chain(
     extract::State((_, state_rx)): extract::State<(mpsc::Sender<Event>, watch::Receiver<State>)>,
 ) -> response::Json<Chain> {
     response::Json(state_rx.borrow().clone().chain)
 }
 
-async fn handle_get_balance(
+async fn handle_query_balance(
     extract::State((_, state_rx)): extract::State<(mpsc::Sender<Event>, watch::Receiver<State>)>,
 ) -> response::Json<u64> {
     let state = state_rx.borrow().clone();
     response::Json(state.chain.get_balance(&state.address))
 }
 
-async fn handle_get_balance_with_address(
+async fn handle_query_balance_with_address(
     extract::State((_, state_rx)): extract::State<(mpsc::Sender<Event>, watch::Receiver<State>)>,
     Path(address): Path<String>,
 ) -> response::Json<u64> {
@@ -83,7 +83,7 @@ struct TransactionPayload {
     send_amount: u64,
     fee: u64,
 }
-async fn handle_post_transaction(
+async fn handle_command_transaction(
     extract::State((event_tx, _)): extract::State<(mpsc::Sender<Event>, watch::Receiver<State>)>,
     extract::Json(payload): extract::Json<TransactionPayload>,
 ) -> response::Json<bool> {
@@ -105,7 +105,7 @@ async fn handle_post_transaction(
 struct PeerPayload {
     ip: String,
 }
-async fn handle_post_peer(
+async fn handle_command_peer(
     extract::State((event_tx, _)): extract::State<(mpsc::Sender<Event>, watch::Receiver<State>)>,
     extract::Json(payload): extract::Json<PeerPayload>,
 ) -> response::Json<bool> {
