@@ -88,7 +88,6 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
             );
         }
         Event::CompletedMineBlock(new_block) => {
-            info!("completed mining block");
             let (chain, changed) = state.chain.add_block(new_block.clone(), true, true);
             let new_state = State { chain, ..state };
             return (new_state, {
@@ -187,6 +186,7 @@ pub async fn run_effect(state: State, effect: Effect) -> Vec<Event> {
             ) else {
                 return vec![Event::MineBlock];
             };
+            info!("completed mining block");
             return vec![Event::CompletedMineBlock(block), Event::MineBlock];
         }
         Effect::BroadcastResponseBlocks(blocks) => {
