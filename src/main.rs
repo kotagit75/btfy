@@ -49,7 +49,10 @@ async fn main() {
         let event_tx_clone = event_tx.clone();
 
         tokio::spawn(async move {
-            run_effect(new_state, event_tx_clone, effect).await;
+            let events = run_effect(new_state, effect).await;
+            for event in events {
+                let _ = event_tx_clone.send(event).await;
+            }
         });
     }
 }

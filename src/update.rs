@@ -12,7 +12,6 @@ use crate::{
     state::State,
 };
 use serde::{Deserialize, Serialize};
-use tokio::sync::mpsc;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Event {
@@ -171,14 +170,14 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
     (state, Effect::None)
 }
 
-pub async fn run_effect(state: State, event_tx: mpsc::Sender<Event>, effect: Effect) {
+pub async fn run_effect(state: State, effect: Effect) -> Vec<Event> {
     match effect {
         Effect::None => {}
         Effect::MineBlock(transactions) => {
             info!("start mining block");
             let Some(beacon) = get_beacon(&state.chain.get_latest_block().hash) else {
                 info!("failed to get beacon");
-                return;
+                return vec![Event::MineBlock];
             };
             let Ok(block) = state.chain.generate_next_block(
                 &state.secret_key,
@@ -186,10 +185,9 @@ pub async fn run_effect(state: State, event_tx: mpsc::Sender<Event>, effect: Eff
                 beacon,
                 transactions,
             ) else {
-                return;
+                return vec![Event::MineBlock];
             };
-            let _ = event_tx.send(Event::CompletedMineBlock(block)).await;
-            let _ = event_tx.send(Event::MineBlock).await;
+            return vec![Event::CompletedMineBlock(block), Event::MineBlock];
         }
         Effect::BroadcastResponseBlocks(blocks) => {
             broadcast(&state.peers, &P2PMessage::ResponseBlockChain(blocks)).await;
@@ -205,6 +203,7 @@ pub async fn run_effect(state: State, event_tx: mpsc::Sender<Event>, effect: Eff
             .await;
         }
     }
+    Vec::new()
 }
 
 #[cfg(test)]
