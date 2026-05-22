@@ -7,6 +7,8 @@ use crate::{
     util::key::SK,
 };
 
+const MAX_PEERS: usize = 64;
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct State {
     pub secret_key: SK,
@@ -66,7 +68,7 @@ impl State {
     }
 
     pub fn add_peer(&self, peer: &Peer) -> (Self, bool) {
-        if self.peers.contains(peer) {
+        if self.peers.contains(peer) || self.peers.len() > MAX_PEERS {
             return (self.clone(), false);
         }
         (
@@ -88,6 +90,33 @@ impl State {
             .iter()
             .fold((self.clone(), false), |(state, changed), peer| {
                 let (state, changed_) = state.add_peer(peer);
+                (state, changed || changed_)
+            })
+    }
+
+    pub fn remove_peer(&self, peer: &Peer) -> (Self, bool) {
+        if !self.peers.contains(peer) {
+            return (self.clone(), false);
+        }
+        (
+            Self {
+                peers: self
+                    .peers
+                    .clone()
+                    .into_iter()
+                    .filter(|p| p != peer)
+                    .collect(),
+                ..self.clone()
+            },
+            true,
+        )
+    }
+
+    pub fn remove_peers(&self, peers: &[Peer]) -> (Self, bool) {
+        peers
+            .iter()
+            .fold((self.clone(), false), |(state, changed), peer| {
+                let (state, changed_) = state.remove_peer(peer);
                 (state, changed || changed_)
             })
     }

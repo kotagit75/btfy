@@ -3,7 +3,9 @@ use std::{
     str::FromStr,
 };
 
+use ::futures::future::join_all;
 use axum::{Router, extract, response, routing::post};
+use reqwest::Response;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 
@@ -73,28 +75,37 @@ impl Peer {
             )
         )
     }
-    pub async fn write(&self, message: &P2PMessage) {
+    pub async fn write(&self, message: &P2PMessage) -> Result<Response, reqwest::Error> {
         let result = reqwest::Client::new()
             .post(&self.get_url())
             .json(message)
             .send()
             .await;
-        if result.is_err() {
-            error!(
-                "failed to send message to peer({}): {:?}",
-                self.ip,
-                result.err()
-            );
+        match result {
+            Err(err) => {
+                error!("failed to send message to peer({}): {:?}", self.ip, err);
+                Err(err)
+            }
+            _ => result,
         }
     }
 }
 
-pub fn broadcast(peers: &[Peer], message: &P2PMessage) {
-    for peer in peers {
+pub async fn broadcast(peers: &[Peer], message: &P2PMessage) -> Vec<Peer> {
+    let tasks = peers.iter().map(|peer| {
         let peer_clone = peer.clone();
         let message_clone = message.clone();
         tokio::spawn(async move {
-            peer_clone.write(&message_clone).await;
-        });
-    }
+            match peer_clone.write(&message_clone).await {
+                Ok(_) => None,
+                Err(_) => Some(peer_clone),
+            }
+        })
+    });
+    join_all(tasks)
+        .await
+        .into_iter()
+        .flatten()
+        .flatten()
+        .collect()
 }
