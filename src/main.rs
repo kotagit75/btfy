@@ -4,6 +4,7 @@ extern crate simple_logger as logger;
 
 extern crate regex;
 
+use clap::Parser;
 use log::Level;
 use tokio::sync::{mpsc, watch};
 
@@ -23,8 +24,18 @@ pub mod state;
 pub mod update;
 pub mod util;
 
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Whether to mine blocks
+    #[arg(short, long)]
+    mining: bool,
+}
+
 #[tokio::main]
 async fn main() {
+    let args = Args::parse();
+
     logger::init_with_level(Level::Info).unwrap();
 
     let Some(mut state) = init_state() else {
@@ -36,7 +47,9 @@ async fn main() {
     let (state_tx, state_rx) = watch::channel(state.clone());
     init_p2p_and_api(state_rx, event_tx.clone()).await;
 
-    let _ = event_tx.send(update::Event::MineBlock).await;
+    if args.mining {
+        let _ = event_tx.send(update::Event::MineBlock).await;
+    }
     let mut previous_chain = state.chain.clone();
 
     while let Some((new_state, effect)) = event_rx.recv().await.map(|event| update(event, state)) {

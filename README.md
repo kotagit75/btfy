@@ -42,6 +42,9 @@ chmod +x beacon/temperature
 # run
 ./target/release/dawn
 
+# run and mine blocks
+./target/release/dawn --mining
+
 # get balance
 curl localhost:8080/balance
 curl localhost:8080/balance/[address]
