@@ -1,4 +1,7 @@
-use std::net::{Ipv4Addr, SocketAddr};
+use std::{
+    net::{Ipv4Addr, SocketAddr},
+    str::FromStr,
+};
 
 use axum::{Router, extract, response, routing::post};
 use serde::{Deserialize, Serialize};
@@ -28,15 +31,29 @@ pub enum P2PMessage {
     QueryLatest,
     QueryAll,
     QueryTransactions,
+    QueryPeers,
     ResponseBlockChain(Vec<Block>),
     ResponseTransactions(Vec<Transaction>),
+    ResponsePeers(Vec<Peer>),
 }
 
 async fn handle_post_message(
     extract::State(event_tx): extract::State<mpsc::Sender<Event>>,
+    extract::ConnectInfo(peer_addr): extract::ConnectInfo<SocketAddr>,
     extract::Json(message): extract::Json<P2PMessage>,
 ) -> response::Json<bool> {
-    response::Json(event_tx.send(Event::P2PMessage(message)).await.is_ok())
+    response::Json(
+        event_tx
+            .send(Event::P2PMessage(
+                match Ipv4Addr::from_str(&peer_addr.ip().to_string()) {
+                    Ok(ip) => Some(Peer::new(ip)),
+                    Err(_) => None,
+                },
+                message,
+            ))
+            .await
+            .is_ok(),
+    )
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]

@@ -19,29 +19,24 @@ pub enum Event {
     AddTransaction(Address, u64, u64),
     MineBlock,
     CompletedMineBlock(Block),
-    P2PMessage(P2PMessage),
+    P2PMessage(Option<Peer>, P2PMessage),
 }
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Effect {
     None,
     MineBlock(Vec<Transaction>),
     BroadcastQueryAll,
+    BroadcastQueryPeers,
     BroadcastResponseBlocks(Vec<Block>),
     BroadcastResponseTransactions(Vec<Transaction>),
+    BroadcastResponsePeers(Vec<Peer>),
 }
 
 pub fn update(event: Event, state: State) -> (State, Effect) {
     match event {
         Event::AddPeer(peer) => {
             info!("added peer: {}", peer.ip);
-            let new_peers: Vec<Peer> = state.peers.into_iter().chain([peer]).collect();
-            return (
-                State {
-                    peers: new_peers,
-                    ..state
-                },
-                Effect::None,
-            );
+            return (state.add_peer(&peer).0, Effect::BroadcastQueryPeers);
         }
         Event::AddTransaction(recipient, send_amount, fee) => {
             if !is_valid_address(&recipient) {
@@ -98,15 +93,15 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
                 }
             });
         }
-        Event::P2PMessage(P2PMessage::QueryAll) => {
+        Event::P2PMessage(_, P2PMessage::QueryAll) => {
             let chain = state.chain.blocks.clone();
             return (state, Effect::BroadcastResponseBlocks(chain));
         }
-        Event::P2PMessage(P2PMessage::QueryLatest) => {
+        Event::P2PMessage(_, P2PMessage::QueryLatest) => {
             let blocks = vec![state.chain.get_latest_block()];
             return (state, Effect::BroadcastResponseBlocks(blocks));
         }
-        Event::P2PMessage(P2PMessage::ResponseBlockChain(blocks)) => {
+        Event::P2PMessage(_, P2PMessage::ResponseBlockChain(blocks)) => {
             let Some(received_latest_block) = blocks.last() else {
                 return (state, Effect::None);
             };
@@ -143,13 +138,13 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
                 }
             }
         }
-        Event::P2PMessage(P2PMessage::QueryTransactions) => {
+        Event::P2PMessage(_, P2PMessage::QueryTransactions) => {
             return (
                 state.clone(),
                 Effect::BroadcastResponseTransactions(state.transactions.clone()),
             );
         }
-        Event::P2PMessage(P2PMessage::ResponseTransactions(transactions)) => {
+        Event::P2PMessage(_, P2PMessage::ResponseTransactions(transactions)) => {
             let (state, changed) =
                 transactions
                     .iter()
@@ -160,6 +155,25 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
             return (state.clone(), {
                 if changed {
                     Effect::BroadcastResponseTransactions(state.transactions.clone())
+                } else {
+                    Effect::None
+                }
+            });
+        }
+        Event::P2PMessage(peer_option, P2PMessage::QueryPeers) => {
+            return (
+                match peer_option {
+                    Some(peer) => state.add_peer(&peer).0,
+                    None => state.clone(),
+                },
+                Effect::BroadcastResponsePeers(state.peers.clone()),
+            );
+        }
+        Event::P2PMessage(_, P2PMessage::ResponsePeers(peers)) => {
+            let (state, changed) = state.add_peers(&peers);
+            return (state.clone(), {
+                if changed {
+                    Effect::BroadcastResponsePeers(state.peers.clone())
                 } else {
                     Effect::None
                 }
@@ -202,6 +216,12 @@ pub async fn run_effect(state: State, effect: Effect) -> Vec<Event> {
                 &P2PMessage::ResponseTransactions(transactions),
             )
             .await;
+        }
+        Effect::BroadcastQueryPeers => {
+            broadcast(&state.peers, &P2PMessage::QueryPeers).await;
+        }
+        Effect::BroadcastResponsePeers(peers) => {
+            broadcast(&state.peers, &P2PMessage::ResponsePeers(peers)).await;
         }
     }
     Vec::new()
@@ -259,7 +279,7 @@ mod tests {
 
         let (next, effect) = update(Event::AddPeer(peer.clone()), state);
 
-        assert_eq!(effect, Effect::None);
+        assert_eq!(effect, Effect::BroadcastQueryPeers);
         assert!(next.peers.contains(&peer));
     }
 
@@ -324,7 +344,7 @@ mod tests {
         state.transactions.push(tx.clone());
 
         let (next, effect) = update(
-            Event::P2PMessage(P2PMessage::QueryTransactions),
+            Event::P2PMessage(None, P2PMessage::QueryTransactions),
             state.clone(),
         );
 
@@ -343,7 +363,7 @@ mod tests {
             .unwrap();
 
         let (next, effect) = update(
-            Event::P2PMessage(P2PMessage::ResponseTransactions(vec![tx.clone()])),
+            Event::P2PMessage(None, P2PMessage::ResponseTransactions(vec![tx.clone()])),
             state,
         );
 
@@ -363,7 +383,7 @@ mod tests {
         state.transactions.push(tx.clone());
 
         let (next, effect) = update(
-            Event::P2PMessage(P2PMessage::ResponseTransactions(vec![tx])),
+            Event::P2PMessage(None, P2PMessage::ResponseTransactions(vec![tx])),
             state.clone(),
         );
 
@@ -428,5 +448,70 @@ mod tests {
             }
             _ => panic!("expected MineBlock effect"),
         }
+    }
+
+    #[test]
+    fn query_peers_adds_sender_and_responds_with_known_peers() {
+        let mut state = funded_state();
+        let existing = Peer::new(Ipv4Addr::new(10, 0, 0, 1));
+        state = state.add_peer(&existing).0;
+        let sender = Peer::new(Ipv4Addr::new(10, 0, 0, 2));
+
+        let (next, effect) = update(
+            Event::P2PMessage(Some(sender.clone()), P2PMessage::QueryPeers),
+            state.clone(),
+        );
+
+        assert!(next.peers.contains(&existing));
+        assert!(next.peers.contains(&sender));
+        assert_eq!(next.peers.len(), 2);
+        assert_eq!(effect, Effect::BroadcastResponsePeers(vec![existing]));
+    }
+
+    #[test]
+    fn query_peers_without_sender_returns_current_list() {
+        let mut state = funded_state();
+        let existing = Peer::new(Ipv4Addr::new(10, 0, 0, 1));
+        state = state.add_peer(&existing).0;
+
+        let (next, effect) = update(
+            Event::P2PMessage(None, P2PMessage::QueryPeers),
+            state.clone(),
+        );
+
+        assert_eq!(next, state);
+        assert_eq!(effect, Effect::BroadcastResponsePeers(vec![existing]));
+    }
+
+    #[test]
+    fn response_peers_merges_and_rebroadcasts() {
+        let mut state = funded_state();
+        let existing = Peer::new(Ipv4Addr::new(10, 0, 0, 1));
+        let new_peer = Peer::new(Ipv4Addr::new(10, 0, 0, 2));
+        state = state.add_peer(&existing).0;
+
+        let (next, effect) = update(
+            Event::P2PMessage(None, P2PMessage::ResponsePeers(vec![new_peer.clone()])),
+            state,
+        );
+
+        assert!(next.peers.contains(&existing));
+        assert!(next.peers.contains(&new_peer));
+        assert_eq!(effect, Effect::BroadcastResponsePeers(next.peers.clone()));
+    }
+
+    #[test]
+    fn response_peers_duplicate_is_ignored() {
+        let mut state = funded_state();
+        let existing = Peer::new(Ipv4Addr::new(10, 0, 0, 1));
+        state = state.add_peer(&existing).0;
+
+        let (next, effect) = update(
+            Event::P2PMessage(None, P2PMessage::ResponsePeers(vec![existing.clone()])),
+            state.clone(),
+        );
+
+        assert_eq!(next, state);
+        assert_eq!(effect, Effect::None);
     }
 }

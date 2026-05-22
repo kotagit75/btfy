@@ -64,4 +64,31 @@ impl State {
             true,
         )
     }
+
+    pub fn add_peer(&self, peer: &Peer) -> (Self, bool) {
+        if self.peers.contains(peer) {
+            return (self.clone(), false);
+        }
+        (
+            Self {
+                peers: self
+                    .peers
+                    .clone()
+                    .into_iter()
+                    .chain([peer.clone()])
+                    .collect(),
+                ..self.clone()
+            },
+            true,
+        )
+    }
+
+    pub fn add_peers(&self, peers: &[Peer]) -> (Self, bool) {
+        peers
+            .iter()
+            .fold((self.clone(), false), |(state, changed), peer| {
+                let (state, changed_) = state.add_peer(peer);
+                (state, changed || changed_)
+            })
+    }
 }
