@@ -13,7 +13,7 @@ cargo build --release
 ```bash
 mkdir beacon
 ```
-Create a shell script named `beacon/temperature`.This script retrieves the latitude and longitude and returns the temperature at that location as `stdout`.It doesn't matter how you implement it. Here is an example. Note that this API does not actually exist.
+Create a shell script named `beacon/temperature`. This script retrieves the latitude ,longitude and timestamp and returns the temperature at that location as `stdout`. It doesn't matter how you implement it. Here is an example. Note that this API does not actually exist.
 ```bash
 #!/bin/bash
 
