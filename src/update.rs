@@ -48,10 +48,7 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
                 "remove peers: {:?}",
                 peers.iter().map(|peer| peer.ip.to_string())
             );
-            return (
-                state.remove_peers(&peers).0,
-                Effect::Broadcast(P2PMessage::QueryPeers),
-            );
+            return (state.remove_peers(&peers).0, Effect::None);
         }
         Event::AddTransaction(recipient, send_amount, fee) => {
             if !is_valid_address(&recipient) {
