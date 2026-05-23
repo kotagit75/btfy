@@ -29,10 +29,12 @@ static TARGET_LOCATIONS: LazyLock<Vec<geojson::Position>> = LazyLock::new(|| {
         .collect()
 });
 
-fn get_temperature(lon: f64, lat: f64) -> Option<f32> {
-    let output = run_command_and_get_output(
-        Command::new(TEMPERATURE_SCRIPT_PATH).args([lat.to_string(), lon.to_string()]),
-    );
+fn get_temperature(lon: f64, lat: f64, timestamp: i64) -> Option<f32> {
+    let output = run_command_and_get_output(Command::new(TEMPERATURE_SCRIPT_PATH).args([
+        lat.to_string(),
+        lon.to_string(),
+        timestamp.to_string(),
+    ]));
     let result = output.map(|str| str.parse::<f32>().ok()).flatten();
     if result.is_none() {
         error!("failed to retrieve the temperature");
@@ -54,12 +56,12 @@ fn choose_locations(latest_block_hash: &Hashed) -> Vec<geojson::Position> {
         .collect()
 }
 
-pub fn get_beacon(latest_block_hash: &Hashed) -> Option<Beacon> {
+pub fn get_beacon(latest_block_hash: &Hashed, timestamp: i64) -> Option<Beacon> {
     let locations: Vec<geojson::Position> = choose_locations(latest_block_hash);
     info!("start getting beacon");
     let temperatures: Vec<_> = locations
         .iter()
-        .map(|pos| get_temperature(pos[0], pos[1]))
+        .map(|pos| get_temperature(pos[0], pos[1], timestamp))
         .collect();
     if temperatures.iter().any(|t| t.is_none()) {
         info!("failed to get beacon");
@@ -71,8 +73,13 @@ pub fn get_beacon(latest_block_hash: &Hashed) -> Option<Beacon> {
     })
 }
 
-pub fn is_valid_beacon(target_beacon: &Beacon, latest_block_hash: &Hashed) -> bool {
-    match get_beacon(latest_block_hash) {
+pub fn get_current_beacon(latest_block_hash: &Hashed) -> Option<Beacon> {
+    // A timestamp with a value of 0 indicates the present
+    get_beacon(latest_block_hash, 0)
+}
+
+pub fn is_valid_beacon(target_beacon: &Beacon, latest_block_hash: &Hashed, timestamp: i64) -> bool {
+    match get_beacon(latest_block_hash, timestamp) {
         Some(beacon) => beacon
             .values
             .iter()

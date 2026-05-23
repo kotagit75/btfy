@@ -30,7 +30,7 @@ git clone https://github.com/kotagit75/Dawn.git
 cd Dawn
 cargo build --release
 mkdir beacon
-cp example/beacon/open-meteo-api beacon/temperature
+nano beacon/temperature
 chmod +x beacon/temperature
 ./target/release/dawn
 ```

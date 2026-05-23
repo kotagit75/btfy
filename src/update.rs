@@ -1,7 +1,7 @@
 use std::{time, vec};
 
 use crate::{
-    beacon::get_beacon,
+    beacon::get_current_beacon,
     blockchain::{
         address::{Address, is_valid_address},
         block::{Block, MAX_TRANSACTIONS_PER_BLOCK},
@@ -213,7 +213,7 @@ pub async fn run_effect(state: State, effect: Effect) -> Vec<Event> {
         Effect::None => {}
         Effect::MineBlock(transactions) => {
             info!("start mining block");
-            let Some(beacon) = get_beacon(&state.chain.get_latest_block().hash) else {
+            let Some(beacon) = get_current_beacon(&state.chain.get_latest_block().hash) else {
                 info!("failed to get beacon");
                 return vec![Event::MineBlock];
             };
