@@ -17,7 +17,12 @@ Create a shell script named `beacon/temperature`.This script retrieves the latit
 ```bash
 #!/bin/bash
 
-temperature=$(curl "https://example.com/api?latitude=$1&longitude=$2")
+if [ $3 -eq 0 ]; then
+    temperature=$(curl "https://example.com/api?latitude=$1&longitude=$2")
+else
+    date --date @$3 +"%Y-%m-%d %H:%M:%S"
+    temperature=$(curl "https://example.com/api?latitude=$1&longitude=$2&timestamp=$3")
+fi
 echo -n $temperature
 exit 0
 ```
