@@ -14,6 +14,9 @@ use crate::{
     util::key::SK,
 };
 
+// For blocks older than this number, temperature verification is omitted.
+const CHECKPOINT_DEPTH: usize = 32;
+
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Chain {
     pub blocks: Vec<Block>,
@@ -72,7 +75,12 @@ impl Chain {
     pub fn is_valid(&self) -> bool {
         let is_valid_genesis_block = self.blocks.first().cloned() == Some(genesis_block());
         let is_valid_chain = self.blocks.windows(2).all(|windows| {
-            is_valid_new_block(&windows[0], &windows[1], &self.get_unspent_transactions().0)
+            is_valid_new_block(
+                &windows[0],
+                &windows[1],
+                &self.get_unspent_transactions().0,
+                self.get_block_depth(&windows[0]),
+            )
         });
         is_valid_genesis_block && is_valid_chain
     }
@@ -85,6 +93,14 @@ impl Chain {
         } else {
             self.clone()
         }
+    }
+
+    pub fn get_block_depth(&self, block: &Block) -> usize {
+        self.blocks
+            .iter()
+            .rev()
+            .take_while(|b| b.hash != block.previous_hash)
+            .count()
     }
 
     pub fn add_block(&self, block: Block, i_generated: bool, generated_now: bool) -> (Self, bool) {
@@ -103,6 +119,7 @@ impl Chain {
             &block,
             &self.get_latest_block(),
             &self.get_unspent_transactions().0,
+            self.get_block_depth(&block),
         ) {
             (
                 Self {
@@ -199,13 +216,15 @@ pub fn is_valid_new_block(
     block: &Block,
     previous_block: &Block,
     unspent_transactions: &[UnspentTransaction],
+    block_depth: usize,
 ) -> bool {
     block.index == previous_block.index + 1
         && block.timestamp > previous_block.timestamp
         && block.previous_hash == previous_block.hash
         && block.calculate_hash() == block.hash
         && block.is_valid(unspent_transactions)
-        && is_valid_beacon(&block.beacon, &previous_block.hash, block.timestamp)
+        && (block_depth > CHECKPOINT_DEPTH
+            || is_valid_beacon(&block.beacon, &block.previous_hash, block.timestamp))
 }
 
 #[cfg(test)]
@@ -354,5 +373,21 @@ mod tests {
             .unwrap();
 
         assert!(tx.is_none());
+    }
+
+    #[test]
+    fn get_block_depth_counts_from_tip() {
+        let g = genesis_block();
+        let b1 = dummy_block(&g, vec![], 1.0);
+        let b2 = dummy_block(&b1, vec![], 2.0);
+        let b3 = dummy_block(&b2, vec![], 3.0);
+        let c = Chain {
+            blocks: vec![g.clone(), b1.clone(), b2.clone(), b3.clone()],
+        };
+
+        assert_eq!(c.get_block_depth(&b3), 1);
+        assert_eq!(c.get_block_depth(&b2), 2);
+        assert_eq!(c.get_block_depth(&b1), 3);
+        assert_eq!(c.get_block_depth(&g), 4);
     }
 }
