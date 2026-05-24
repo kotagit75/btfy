@@ -2,7 +2,7 @@ use openssl::error::ErrorStack;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    beacon::{Beacon, is_valid_beacon},
+    beacon::{Beacon, BeaconCache, BeaconKey, is_valid_beacon},
     blockchain::{
         address::Address,
         block::{Block, BlockData, genesis_block, solve_block_vdf},
@@ -15,7 +15,7 @@ use crate::{
 };
 
 // For blocks older than this number, temperature verification is omitted.
-const CHECKPOINT_DEPTH: usize = 600;
+pub const CHECKPOINT_DEPTH: usize = 600;
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Chain {
@@ -72,21 +72,22 @@ impl Chain {
         )
     }
 
-    pub fn is_valid(&self) -> bool {
+    pub fn is_valid(&self, cache: &dyn BeaconCache) -> bool {
         let is_valid_genesis_block = self.blocks.first().cloned() == Some(genesis_block());
         let is_valid_chain = self.blocks.windows(2).all(|windows| {
             is_valid_new_block(
-                &windows[0],
                 &windows[1],
+                &windows[0],
                 &self.get_unspent_transactions().0,
-                self.get_block_depth(&windows[0]),
+                self.get_block_depth(&windows[1]),
+                cache,
             )
         });
         is_valid_genesis_block && is_valid_chain
     }
 
-    pub fn replace(&self, new_chain: Chain) -> Self {
-        if new_chain.is_valid() && new_chain.blocks.len() > self.blocks.len() {
+    pub fn replace(&self, new_chain: Chain, cache: &dyn BeaconCache) -> Self {
+        if new_chain.is_valid(cache) && new_chain.blocks.len() > self.blocks.len() {
             Self {
                 blocks: new_chain.blocks,
             }
@@ -103,23 +104,30 @@ impl Chain {
             .count()
     }
 
-    pub fn add_block(&self, block: Block, i_generated: bool, generated_now: bool) -> (Self, bool) {
-        if !i_generated
-            && generated_now
-            && !is_valid_beacon(
-                &block.beacon,
-                &self.get_latest_block().hash,
-                block.timestamp,
-            )
-        {
-            return (self.clone(), false);
+    pub fn add_block(
+        &self,
+        block: Block,
+        i_generated: bool,
+        generated_now: bool,
+        cache: &dyn BeaconCache,
+    ) -> (Self, bool) {
+        let previous_block = self.get_latest_block();
+        if !i_generated && generated_now {
+            let Some(beacon) = cache.get(&BeaconKey::new(&previous_block.hash, block.timestamp))
+            else {
+                return (self.clone(), false);
+            };
+            if !is_valid_beacon(&beacon, &block.beacon) {
+                return (self.clone(), false);
+            }
         }
 
         if is_valid_new_block(
             &block,
-            &self.get_latest_block(),
+            &previous_block,
             &self.get_unspent_transactions().0,
             self.get_block_depth(&block),
+            cache,
         ) {
             (
                 Self {
@@ -217,20 +225,28 @@ pub fn is_valid_new_block(
     previous_block: &Block,
     unspent_transactions: &[UnspentTransaction],
     block_depth: usize,
+    cache: &dyn BeaconCache,
 ) -> bool {
+    let beacon_ok = if block_depth > CHECKPOINT_DEPTH {
+        true
+    } else {
+        let Some(beacon) = cache.get(&BeaconKey::new(&previous_block.hash, block.timestamp)) else {
+            return false;
+        };
+        is_valid_beacon(&beacon, &block.beacon)
+    };
     block.index == previous_block.index + 1
         && block.timestamp > previous_block.timestamp
         && block.previous_hash == previous_block.hash
         && block.calculate_hash() == block.hash
         && block.is_valid(unspent_transactions)
-        && (block_depth > CHECKPOINT_DEPTH
-            || is_valid_beacon(&block.beacon, &block.previous_hash, block.timestamp))
+        && beacon_ok
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::beacon::Beacon;
+    use crate::beacon::{Beacon, InMemoryBeaconCache};
     use crate::blockchain::block::{Block, genesis_block};
     use crate::blockchain::transaction::{TransactionIn, coinbase_transaction};
     use crate::util::key::{SK, generate_pk_and_sk};
@@ -347,7 +363,8 @@ mod tests {
     fn add_block_rejects_invalid_block() {
         let c = Chain::new();
         let bad = dummy_block(&c.get_latest_block(), vec![], 1.0);
-        let (next, changed) = c.add_block(bad, false, false);
+        let cache = InMemoryBeaconCache::new();
+        let (next, changed) = c.add_block(bad, false, false, &cache);
         assert!(!changed);
         assert_eq!(next, c);
     }
@@ -359,7 +376,8 @@ mod tests {
         let longer_but_invalid = Chain {
             blocks: vec![g.clone(), dummy_block(&g, vec![], 1.0)],
         };
-        assert_eq!(base.replace(longer_but_invalid), base);
+        let cache = InMemoryBeaconCache::new();
+        assert_eq!(base.replace(longer_but_invalid, &cache), base);
     }
 
     #[test]

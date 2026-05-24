@@ -1,16 +1,65 @@
 use geojson::{FeatureCollection, GeometryValue};
 use serde::{Deserialize, Serialize};
-use std::process::Command;
-use std::sync::LazyLock;
+use std::{
+    collections::HashMap,
+    sync::{LazyLock, Mutex},
+};
 
-use crate::util::{command::run_command_and_get_output, hash::Hashed};
+use crate::util::hash::Hashed;
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Beacon {
     pub values: Vec<f32>,
 }
 
-const TEMPERATURE_SCRIPT_PATH: &str = "beacon/temperature";
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BeaconKey {
+    pub latest_block_hash: Hashed,
+    pub timestamp: i64,
+}
+
+impl BeaconKey {
+    pub fn new(latest_block_hash: &Hashed, timestamp: i64) -> Self {
+        Self {
+            latest_block_hash: *latest_block_hash,
+            timestamp,
+        }
+    }
+}
+
+pub trait BeaconCache: Send + Sync {
+    fn get(&self, key: &BeaconKey) -> Option<Beacon>;
+    fn insert(&self, key: BeaconKey, beacon: Beacon);
+}
+
+#[derive(Default)]
+pub struct InMemoryBeaconCache {
+    inner: Mutex<HashMap<BeaconKey, Beacon>>,
+}
+
+impl InMemoryBeaconCache {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl BeaconCache for InMemoryBeaconCache {
+    fn get(&self, key: &BeaconKey) -> Option<Beacon> {
+        self.inner
+            .lock()
+            .expect("beacon cache lock poisoned")
+            .get(key)
+            .cloned()
+    }
+
+    fn insert(&self, key: BeaconKey, beacon: Beacon) {
+        self.inner
+            .lock()
+            .expect("beacon cache lock poisoned")
+            .insert(key, beacon);
+    }
+}
+
 const TARGET_GEOJSON: &str = include_str!("beacon/target.geojson");
 static TARGET_LOCATIONS: LazyLock<Vec<geojson::Position>> = LazyLock::new(|| {
     let Ok(collection) = TARGET_GEOJSON.parse::<FeatureCollection>() else {
@@ -29,17 +78,23 @@ static TARGET_LOCATIONS: LazyLock<Vec<geojson::Position>> = LazyLock::new(|| {
         .collect()
 });
 
-fn get_temperature(lon: f64, lat: f64, timestamp: i64) -> Option<f32> {
-    let output = run_command_and_get_output(Command::new(TEMPERATURE_SCRIPT_PATH).args([
-        lat.to_string(),
-        lon.to_string(),
-        timestamp.to_string(),
-    ]));
-    let result = output.map(|str| str.parse::<f32>().ok()).flatten();
-    if result.is_none() {
-        error!("failed to retrieve the temperature");
+async fn get_temperature(lon: f64, lat: f64, timestamp: i64) -> Option<f32> {
+    let result = reqwest::Client::new()
+        .get("http://localhost:3306/")
+        .query(&[
+            ("lat", lat.to_string()),
+            ("lon", lon.to_string()),
+            ("timestamp", timestamp.to_string()),
+        ])
+        .send()
+        .await;
+    match result {
+        Ok(res) => res.json::<f32>().await.ok(),
+        Err(err) => {
+            error!("failed to retrieve the temperature: {}", err);
+            None
+        }
     }
-    result
 }
 
 fn choose_locations(latest_block_hash: &Hashed) -> Vec<geojson::Position> {
@@ -56,35 +111,54 @@ fn choose_locations(latest_block_hash: &Hashed) -> Vec<geojson::Position> {
         .collect()
 }
 
-pub fn get_beacon(latest_block_hash: &Hashed, timestamp: i64) -> Option<Beacon> {
+pub async fn get_beacon(latest_block_hash: &Hashed, timestamp: i64) -> Option<Beacon> {
     let locations: Vec<geojson::Position> = choose_locations(latest_block_hash);
     info!("start getting beacon");
-    let temperatures: Vec<_> = locations
-        .iter()
-        .map(|pos| get_temperature(pos[0], pos[1], timestamp))
-        .collect();
-    if temperatures.iter().any(|t| t.is_none()) {
+    let mut temperatures: Vec<f32> = Vec::new();
+    for (i, pos) in locations.iter().enumerate() {
+        info!("getting temperature for location {}", i);
+        if let Some(temp) = get_temperature(pos[0], pos[1], timestamp).await {
+            temperatures.push(temp);
+        } else {
+            info!("failed to get temperature for location {}", i);
+            return None;
+        }
+    }
+    if temperatures.len() != locations.len() {
         info!("failed to get beacon");
         return None;
     }
     info!("completed getting beacon");
     Some(Beacon {
-        values: temperatures.iter().flatten().cloned().collect(),
+        values: temperatures,
     })
 }
 
-pub fn get_current_beacon(latest_block_hash: &Hashed) -> Option<Beacon> {
-    // A timestamp with a value of 0 indicates the present
-    get_beacon(latest_block_hash, 0)
+pub async fn prefetch_beacon(
+    cache: &dyn BeaconCache,
+    latest_block_hash: &Hashed,
+    timestamp: i64,
+) -> bool {
+    let key = BeaconKey::new(latest_block_hash, timestamp);
+    if cache.get(&key).is_some() {
+        return true;
+    }
+    let Some(beacon) = get_beacon(latest_block_hash, timestamp).await else {
+        return false;
+    };
+    cache.insert(key, beacon);
+    true
 }
 
-pub fn is_valid_beacon(target_beacon: &Beacon, latest_block_hash: &Hashed, timestamp: i64) -> bool {
-    match get_beacon(latest_block_hash, timestamp) {
-        Some(beacon) => beacon
-            .values
-            .iter()
-            .zip(target_beacon.values.iter())
-            .all(|(a, b)| (a - b).abs() <= 0.5),
-        None => false,
-    }
+pub async fn get_current_beacon(latest_block_hash: &Hashed) -> Option<Beacon> {
+    // A timestamp with a value of 0 indicates the present
+    get_beacon(latest_block_hash, 0).await
+}
+
+pub fn is_valid_beacon(own_beacon: &Beacon, target_beacon: &Beacon) -> bool {
+    own_beacon
+        .values
+        .iter()
+        .zip(target_beacon.values.iter())
+        .all(|(a, b)| (a - b).abs() <= 0.5)
 }

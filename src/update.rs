@@ -1,16 +1,17 @@
 use std::{time, vec};
 
 use crate::{
-    beacon::get_current_beacon,
+    beacon::{BeaconCache, get_current_beacon, prefetch_beacon},
     blockchain::{
         address::{Address, is_valid_address},
         block::{Block, MAX_TRANSACTIONS_PER_BLOCK},
-        chain::Chain,
+        chain::{CHECKPOINT_DEPTH, Chain},
         transaction::Transaction,
     },
     p2p::{P2PMessage, Peer, broadcast},
     state::State,
 };
+use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -29,7 +30,18 @@ pub enum Effect {
     Broadcast(P2PMessage),
 }
 
-pub fn update(event: Event, state: State) -> (State, Effect) {
+async fn prefetch_chain_beacons(cache: &dyn BeaconCache, blocks: &[Block]) {
+    if blocks.len() < 2 {
+        return;
+    }
+    let start = blocks.len().saturating_sub(CHECKPOINT_DEPTH + 1);
+    let tasks = blocks[start..]
+        .windows(2)
+        .map(|window| prefetch_beacon(cache, &window[0].hash, window[1].timestamp));
+    let _ = join_all(tasks).await;
+}
+
+pub async fn update(event: Event, state: State, beacon_cache: &dyn BeaconCache) -> (State, Effect) {
     match event {
         Event::AddPeer(peer) => {
             info!("added peer: {}", peer.ip);
@@ -97,8 +109,18 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
             );
         }
         Event::CompletedMineBlock(new_block) => {
-            let (chain, changed) = state.chain.add_block(new_block.clone(), true, true);
+            let _ = prefetch_beacon(
+                beacon_cache,
+                &state.chain.get_latest_block().hash,
+                new_block.timestamp,
+            )
+            .await;
+            let (chain, changed) =
+                state
+                    .chain
+                    .add_block(new_block.clone(), true, true, beacon_cache);
             let new_state = State { chain, ..state };
+            println!("Event::CompletedMineBlock: changed={changed}");
             return (new_state, {
                 if changed {
                     Effect::Broadcast(P2PMessage::ResponseBlockChain(vec![new_block]))
@@ -128,10 +150,18 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
             let held_latest_block = state.chain.get_latest_block();
             if received_latest_block.index > held_latest_block.index {
                 if received_latest_block.previous_hash == held_latest_block.hash {
-                    let (new_chain, changed) =
-                        state
-                            .chain
-                            .add_block(received_latest_block.clone(), false, true);
+                    let _ = prefetch_beacon(
+                        beacon_cache,
+                        &held_latest_block.hash,
+                        received_latest_block.timestamp,
+                    )
+                    .await;
+                    let (new_chain, changed) = state.chain.add_block(
+                        received_latest_block.clone(),
+                        false,
+                        true,
+                        beacon_cache,
+                    );
                     return (
                         State {
                             chain: new_chain,
@@ -150,9 +180,10 @@ pub fn update(event: Event, state: State) -> (State, Effect) {
                 } else if blocks.len() == 1 {
                     return (state, Effect::Broadcast(P2PMessage::QueryAll));
                 } else {
+                    prefetch_chain_beacons(beacon_cache, &blocks).await;
                     return (
                         State {
-                            chain: state.chain.replace(Chain { blocks }),
+                            chain: state.chain.replace(Chain { blocks }, beacon_cache),
                             ..state
                         },
                         Effect::None,
@@ -210,7 +241,8 @@ pub async fn run_effect(state: State, effect: Effect) -> Vec<Event> {
         Effect::None => {}
         Effect::MineBlock(transactions) => {
             info!("start mining block");
-            let Some(beacon) = get_current_beacon(&state.chain.get_latest_block().hash) else {
+            let Some(beacon) = get_current_beacon(&state.chain.get_latest_block().hash).await
+            else {
                 info!("failed to get beacon");
                 return vec![Event::MineBlock];
             };
@@ -237,7 +269,7 @@ pub async fn run_effect(state: State, effect: Effect) -> Vec<Event> {
 mod tests {
     use super::*;
     use crate::{
-        beacon::Beacon,
+        beacon::{Beacon, InMemoryBeaconCache},
         blockchain::{
             block::{Block, genesis_block},
             chain::Chain,
@@ -293,63 +325,68 @@ mod tests {
             .unwrap()
     }
 
-    #[test]
-    fn add_peer_broadcasts_query_peers_on_change() {
+    async fn run_update(event: Event, state: State) -> (State, Effect) {
+        let cache = InMemoryBeaconCache::new();
+        update(event, state, &cache).await
+    }
+
+    #[tokio::test]
+    async fn add_peer_broadcasts_query_peers_on_change() {
         let state = funded_state();
         let peer = Peer::new(Ipv4Addr::new(127, 0, 0, 1));
 
-        let (next, effect) = update(Event::AddPeer(peer.clone()), state);
+        let (next, effect) = run_update(Event::AddPeer(peer.clone()), state).await;
 
         assert!(next.peers.contains(&peer));
         assert_eq!(effect, Effect::Broadcast(P2PMessage::QueryPeers));
     }
 
-    #[test]
-    fn add_peer_duplicate_does_not_broadcast() {
+    #[tokio::test]
+    async fn add_peer_duplicate_does_not_broadcast() {
         let mut state = funded_state();
         let peer = Peer::new(Ipv4Addr::new(127, 0, 0, 1));
         state = state.add_peer(&peer).0;
 
-        let (next, effect) = update(Event::AddPeer(peer.clone()), state.clone());
+        let (next, effect) = run_update(Event::AddPeer(peer.clone()), state.clone()).await;
 
         assert_eq!(next, state);
         assert_eq!(effect, Effect::None);
     }
 
-    #[test]
-    fn remove_peers_removes_and_broadcasts_query_peers() {
+    #[tokio::test]
+    async fn remove_peers_removes_and_broadcasts_query_peers() {
         let mut state = funded_state();
         let p1 = Peer::new(Ipv4Addr::new(10, 0, 0, 1));
         let p2 = Peer::new(Ipv4Addr::new(10, 0, 0, 2));
         state = state.add_peer(&p1).0;
         state = state.add_peer(&p2).0;
 
-        let (next, effect) = update(Event::RemovePeers(vec![p1.clone()]), state);
+        let (next, effect) = run_update(Event::RemovePeers(vec![p1.clone()]), state).await;
 
         assert!(!next.peers.contains(&p1));
         assert!(next.peers.contains(&p2));
         assert_eq!(effect, Effect::None);
     }
 
-    #[test]
-    fn add_transaction_rejects_invalid_recipient() {
+    #[tokio::test]
+    async fn add_transaction_rejects_invalid_recipient() {
         let state = funded_state();
         let invalid = Address {
             der: "this-is-not-hex".to_string(),
         };
 
-        let (next, effect) = update(Event::AddTransaction(invalid, 10, 0), state.clone());
+        let (next, effect) = run_update(Event::AddTransaction(invalid, 10, 0), state.clone()).await;
 
         assert_eq!(effect, Effect::None);
         assert_eq!(next, state);
     }
 
-    #[test]
-    fn add_transaction_accepts_and_broadcasts_when_valid() {
+    #[tokio::test]
+    async fn add_transaction_accepts_and_broadcasts_when_valid() {
         let state = funded_state();
         let (recipient, _) = keypair();
 
-        let (next, effect) = update(Event::AddTransaction(recipient, 10, 0), state);
+        let (next, effect) = run_update(Event::AddTransaction(recipient, 10, 0), state).await;
 
         assert_eq!(next.transactions.len(), 1);
         assert_eq!(
@@ -358,23 +395,24 @@ mod tests {
         );
     }
 
-    #[test]
-    fn add_transaction_with_fee_is_rejected_when_not_enough_for_fee() {
+    #[tokio::test]
+    async fn add_transaction_with_fee_is_rejected_when_not_enough_for_fee() {
         let state = funded_state();
         let (recipient, _) = keypair();
 
-        let (next, effect) = update(Event::AddTransaction(recipient, 50, 1), state.clone());
+        let (next, effect) =
+            run_update(Event::AddTransaction(recipient, 50, 1), state.clone()).await;
 
         assert_eq!(next, state);
         assert_eq!(effect, Effect::None);
     }
 
-    #[test]
-    fn add_transaction_with_fee_is_broadcast_when_sufficient() {
+    #[tokio::test]
+    async fn add_transaction_with_fee_is_broadcast_when_sufficient() {
         let state = funded_state();
         let (recipient, _) = keypair();
 
-        let (next, effect) = update(Event::AddTransaction(recipient, 48, 2), state);
+        let (next, effect) = run_update(Event::AddTransaction(recipient, 48, 2), state).await;
 
         assert_eq!(next.transactions.len(), 1);
         assert_eq!(next.transactions[0].fee, 2);
@@ -387,8 +425,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn mine_block_clears_pending_and_returns_sorted_transactions() {
+    #[tokio::test]
+    async fn mine_block_clears_pending_and_returns_sorted_transactions() {
         let mut state = funded_state();
         let tx1 = Transaction {
             sender: state.address.clone(),
@@ -406,7 +444,7 @@ mod tests {
         };
         state.transactions = vec![tx1, tx2];
 
-        let (next, effect) = update(Event::MineBlock, state);
+        let (next, effect) = run_update(Event::MineBlock, state).await;
 
         assert!(next.transactions.is_empty());
         match effect {
@@ -419,8 +457,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn mine_block_limits_transactions_to_max_and_prioritizes_fees() {
+    #[tokio::test]
+    async fn mine_block_limits_transactions_to_max_and_prioritizes_fees() {
         let mut state = funded_state();
         let total = MAX_TRANSACTIONS_PER_BLOCK + 5;
         let txs: Vec<Transaction> = (0..total)
@@ -434,7 +472,7 @@ mod tests {
             .collect();
         state.transactions = txs;
 
-        let (next, effect) = update(Event::MineBlock, state);
+        let (next, effect) = run_update(Event::MineBlock, state).await;
 
         assert!(next.transactions.is_empty());
         match effect {
@@ -452,18 +490,19 @@ mod tests {
         }
     }
 
-    #[test]
-    fn query_transactions_returns_current_pool() {
+    #[tokio::test]
+    async fn query_transactions_returns_current_pool() {
         let mut state = funded_state();
         let (recipient, _) = keypair();
         let tx = build_tx(&state, &recipient, 10, 0);
         state.transactions.push(tx.clone());
         let expected = state.transactions.clone();
 
-        let (next, effect) = update(
+        let (next, effect) = run_update(
             Event::P2PMessage(None, P2PMessage::QueryTransactions),
             state.clone(),
-        );
+        )
+        .await;
 
         assert_eq!(next, state);
         assert_eq!(
@@ -472,16 +511,17 @@ mod tests {
         );
     }
 
-    #[test]
-    fn response_transactions_adds_new_and_rebroadcasts() {
+    #[tokio::test]
+    async fn response_transactions_adds_new_and_rebroadcasts() {
         let state = funded_state();
         let (recipient, _) = keypair();
         let tx = build_tx(&state, &recipient, 10, 0);
 
-        let (next, effect) = update(
+        let (next, effect) = run_update(
             Event::P2PMessage(None, P2PMessage::ResponseTransactions(vec![tx.clone()])),
             state,
-        );
+        )
+        .await;
 
         assert_eq!(next.transactions, vec![tx.clone()]);
         assert_eq!(
@@ -490,33 +530,35 @@ mod tests {
         );
     }
 
-    #[test]
-    fn response_transactions_duplicate_is_ignored() {
+    #[tokio::test]
+    async fn response_transactions_duplicate_is_ignored() {
         let mut state = funded_state();
         let (recipient, _) = keypair();
         let tx = build_tx(&state, &recipient, 10, 0);
         state.transactions.push(tx.clone());
 
-        let (next, effect) = update(
+        let (next, effect) = run_update(
             Event::P2PMessage(None, P2PMessage::ResponseTransactions(vec![tx])),
             state.clone(),
-        );
+        )
+        .await;
 
         assert_eq!(next, state);
         assert_eq!(effect, Effect::None);
     }
 
-    #[test]
-    fn query_peers_adds_sender_and_responds_with_known_peers() {
+    #[tokio::test]
+    async fn query_peers_adds_sender_and_responds_with_known_peers() {
         let mut state = funded_state();
         let existing = Peer::new(Ipv4Addr::new(10, 0, 0, 1));
         state = state.add_peer(&existing).0;
         let sender = Peer::new(Ipv4Addr::new(10, 0, 0, 2));
 
-        let (next, effect) = update(
+        let (next, effect) = run_update(
             Event::P2PMessage(Some(sender.clone()), P2PMessage::QueryPeers),
             state.clone(),
-        );
+        )
+        .await;
 
         assert!(next.peers.contains(&existing));
         assert!(next.peers.contains(&sender));
@@ -527,16 +569,17 @@ mod tests {
         );
     }
 
-    #[test]
-    fn query_peers_without_sender_returns_current_list() {
+    #[tokio::test]
+    async fn query_peers_without_sender_returns_current_list() {
         let mut state = funded_state();
         let existing = Peer::new(Ipv4Addr::new(10, 0, 0, 1));
         state = state.add_peer(&existing).0;
 
-        let (next, effect) = update(
+        let (next, effect) = run_update(
             Event::P2PMessage(None, P2PMessage::QueryPeers),
             state.clone(),
-        );
+        )
+        .await;
 
         assert_eq!(next, state);
         assert_eq!(
@@ -545,17 +588,18 @@ mod tests {
         );
     }
 
-    #[test]
-    fn response_peers_merges_and_rebroadcasts() {
+    #[tokio::test]
+    async fn response_peers_merges_and_rebroadcasts() {
         let mut state = funded_state();
         let existing = Peer::new(Ipv4Addr::new(10, 0, 0, 1));
         let new_peer = Peer::new(Ipv4Addr::new(10, 0, 0, 2));
         state = state.add_peer(&existing).0;
 
-        let (next, effect) = update(
+        let (next, effect) = run_update(
             Event::P2PMessage(None, P2PMessage::ResponsePeers(vec![new_peer.clone()])),
             state,
-        );
+        )
+        .await;
 
         assert!(next.peers.contains(&existing));
         assert!(next.peers.contains(&new_peer));
@@ -565,16 +609,17 @@ mod tests {
         );
     }
 
-    #[test]
-    fn response_peers_duplicate_is_ignored() {
+    #[tokio::test]
+    async fn response_peers_duplicate_is_ignored() {
         let mut state = funded_state();
         let existing = Peer::new(Ipv4Addr::new(10, 0, 0, 1));
         state = state.add_peer(&existing).0;
 
-        let (next, effect) = update(
+        let (next, effect) = run_update(
             Event::P2PMessage(None, P2PMessage::ResponsePeers(vec![existing.clone()])),
             state.clone(),
-        );
+        )
+        .await;
 
         assert_eq!(next, state);
         assert_eq!(effect, Effect::None);
