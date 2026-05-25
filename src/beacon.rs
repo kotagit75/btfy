@@ -78,9 +78,11 @@ static TARGET_LOCATIONS: LazyLock<Vec<geojson::Position>> = LazyLock::new(|| {
         .collect()
 });
 
+const TEMPERATURE_SERVER_URL: &str = "http://localhost:8000/";
+
 async fn get_temperature(lon: f64, lat: f64, timestamp: i64) -> Option<f32> {
     let result = reqwest::Client::new()
-        .get("http://localhost:3306/")
+        .get(TEMPERATURE_SERVER_URL)
         .query(&[
             ("lat", lat.to_string()),
             ("lon", lon.to_string()),
