@@ -30,7 +30,7 @@ git clone https://github.com/kotagit75/Dawn.git
 cd Dawn
 chmod +x example/open-meteo
 chmod +x commands/run.sh
-./commands/run.sh examples/open-meteo
+./commands/run.sh example/open-meteo
 ```
 
 [Detailed Installation Instructions](docs/installation.md)
