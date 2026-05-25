@@ -28,11 +28,9 @@ Here, data that is difficult to predict is referred to as a "beacon." Dawn uses 
 ```bash
 git clone https://github.com/kotagit75/Dawn.git
 cd Dawn
-cargo build --release
-mkdir beacon
-nano beacon/temperature
-chmod +x beacon/temperature
-./target/release/dawn
+chmod +x examples/open-meteo
+chmod +x commands/run.sh
+./commands/run.sh examples/open-meteo
 ```
 
 [Detailed Installation Instructions](docs/installation.md)
