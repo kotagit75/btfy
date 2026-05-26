@@ -10,11 +10,13 @@ Dawn is a cryptocurrency that relies on the randomness of the weather and crypto
 ![Rust](https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white)
 ![GitHub Actions Results](https://github.com/kotagit75/Dawn/actions/workflows/test.yaml/badge.svg)
 
+A Japanese article explaining Dawn can be found [here](https://zenn.dev/yuzu_mikan/articles/7e5df1520f183a).
+
 > [!NOTE]
 > Dawn is currently in active development. The API and features may change without notice.
 
-> [!NOTE]
-> A Japanese article explaining Dawn can be found [here](https://zenn.dev/yuzu_mikan/articles/7e5df1520f183a).
+> [!CAUTION]
+> No Guarantee of Monetary Value The "Dawn" project is currently in its development. Any tokens (UTXOs) generated or utilized within this network are intended solely for the technical verification of the unique "Proof of Weather" consensus and overall system stability. They do not represent, nor do they guarantee, any real-world monetary value, convertibility to legal tender, or purchasing power.
 
 ## :sparkles: Features
 - ⛅ Consensus by Weather - Weather data enables rapid consensus building
