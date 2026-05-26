@@ -1,3 +1,4 @@
+# This workflow runs tests and checks formatting for the Rust project.
 name: Rust CI
 
 on:
