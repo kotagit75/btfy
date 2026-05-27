@@ -15,9 +15,6 @@ A Japanese article explaining Dawn can be found [here](https://zenn.dev/yuzu_mik
 > [!NOTE]
 > Dawn is currently in active development. The API and features may change without notice.
 
-> [!CAUTION]
-> No Guarantee of Monetary Value The "Dawn" project is currently in its development. Any tokens (UTXOs) generated or utilized within this network are intended solely for the technical verification of the unique "Proof of Weather" consensus and overall system stability. They do not represent, nor do they guarantee, any real-world monetary value, convertibility to legal tender, or purchasing power.
-
 ## :sparkles: Features
 - ⛅ Consensus by Weather - Weather data enables rapid consensus building
 - ⚡ Highly energy-efficient - Because VDF is used instead of Proof of Work, it is more energy-efficient
@@ -58,6 +55,9 @@ curl -X POST -H "Content-Type: application/json" -d '{"recipient":"[address]", "
 # add peer
 curl -X POST -H "Content-Type: application/json" -d "{'ip':'[IP Addr]'}" localhost:8080/peer
 ```
+
+> [!CAUTION]
+> No Guarantee of Monetary Value The "Dawn" project is currently in its development. Any tokens (UTXOs) generated or utilized within this network are intended solely for the technical verification of the unique "Proof of Weather" consensus and overall system stability. They do not represent, nor do they guarantee, any real-world monetary value, convertibility to legal tender, or purchasing power.
 
 ## :books: Documents
 - [docs/installation.md](docs/installation.md)
