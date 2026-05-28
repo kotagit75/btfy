@@ -1,7 +1,7 @@
 use std::{time, vec};
 
 use crate::{
-    beacon::{BeaconCache, get_current_beacon, prefetch_beacon},
+    beacon::{BeaconCache, get_beacon, prefetch_beacon},
     blockchain::{
         address::{Address, is_valid_address},
         block::{Block, MAX_TRANSACTIONS_PER_BLOCK},
@@ -11,6 +11,7 @@ use crate::{
     p2p::{P2PMessage, Peer, broadcast},
     state::State,
 };
+use chrono::Utc;
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 
@@ -241,7 +242,9 @@ pub async fn run_effect(state: State, effect: Effect) -> Vec<Event> {
         Effect::None => {}
         Effect::MineBlock(transactions) => {
             info!("start mining block");
-            let Some(beacon) = get_current_beacon(&state.chain.get_latest_block().hash).await
+            let next_timestamp = Utc::now().timestamp_millis();
+            let Some(beacon) =
+                get_beacon(&state.chain.get_latest_block().hash, next_timestamp).await
             else {
                 info!("failed to get beacon");
                 return vec![Event::MineBlock];
@@ -252,6 +255,7 @@ pub async fn run_effect(state: State, effect: Effect) -> Vec<Event> {
                 &state.address,
                 beacon,
                 transactions,
+                next_timestamp,
             ) else {
                 return vec![Event::MineBlock];
             };

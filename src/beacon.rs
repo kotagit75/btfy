@@ -152,11 +152,6 @@ pub async fn prefetch_beacon(
     true
 }
 
-pub async fn get_current_beacon(latest_block_hash: &Hashed) -> Option<Beacon> {
-    // A timestamp with a value of 0 indicates the present
-    get_beacon(latest_block_hash, 0).await
-}
-
 pub fn is_valid_beacon(own_beacon: &Beacon, target_beacon: &Beacon) -> bool {
     own_beacon
         .values

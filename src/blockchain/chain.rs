@@ -42,10 +42,11 @@ impl Chain {
         issuer: &Address,
         beacon: Beacon,
         transactions_without_coinbase: Vec<Transaction>,
+        timestamp: i64,
     ) -> Result<Block, ErrorStack> {
         let previous_block: Block = self.get_latest_block();
         let next_index: u64 = previous_block.index + 1;
-        let next_timestamp: i64 = chrono::Utc::now().timestamp_millis();
+        let next_timestamp = timestamp;
         let transactions = [coinbase_transaction(issuer, next_index)]
             .iter()
             .chain(&transactions_without_coinbase)
