@@ -6,12 +6,13 @@ extern crate regex;
 
 use clap::Parser;
 use log::Level;
-use std::sync::Arc;
+use std::{net::Ipv4Addr, str::FromStr, sync::Arc};
 use tokio::sync::{mpsc, watch};
 
 use crate::{
     beacon::InMemoryBeaconCache,
     node::save_chain,
+    p2p::Peer,
     state::State,
     update::{run_effect, update},
 };
@@ -32,6 +33,10 @@ struct Args {
     /// Whether to mine blocks
     #[arg(short, long)]
     mining: bool,
+
+    /// The IP address to add to the peer list
+    #[arg(short, long)]
+    peer: Option<String>,
 }
 
 #[tokio::main]
@@ -52,6 +57,14 @@ async fn main() {
 
     if args.mining {
         let _ = event_tx.send(update::Event::MineBlock).await;
+    }
+    if let Some(address) = args.peer {
+        match Ipv4Addr::from_str(&address) {
+            Ok(ip) => {
+                let _ = event_tx.send(update::Event::AddPeer(Peer::new(ip))).await;
+            }
+            Err(e) => error!("invalid ip address: {}", e),
+        }
     }
     let mut previous_chain = state.chain.clone();
 
