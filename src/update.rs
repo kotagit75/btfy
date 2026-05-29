@@ -14,6 +14,7 @@ use crate::{
 use chrono::Utc;
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
+use tokio::sync::oneshot;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Event {
@@ -29,6 +30,18 @@ pub enum Effect {
     None,
     MineBlock(Vec<Transaction>),
     Broadcast(P2PMessage),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct UpdateResult {
+    pub changed: bool,
+    pub effect: Effect,
+}
+
+#[derive(Debug)]
+pub enum Command {
+    Event(Event),
+    ApiRequest(Event, oneshot::Sender<UpdateResult>),
 }
 
 async fn prefetch_chain_beacons(cache: &dyn BeaconCache, blocks: &[Block]) {

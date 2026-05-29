@@ -12,10 +12,10 @@ use tokio::sync::mpsc;
 use crate::{
     blockchain::{block::Block, transaction::Transaction},
     config::CONFIG,
-    update::Event,
+    update::{Command, Event},
 };
 
-pub async fn init_p2p(event_tx: mpsc::Sender<Event>) {
+pub async fn init_p2p(event_tx: mpsc::Sender<Command>) {
     let app = Router::new()
         .route("/", post(handle_post_message))
         .with_state(event_tx);
@@ -45,19 +45,19 @@ pub enum P2PMessage {
 }
 
 async fn handle_post_message(
-    extract::State(event_tx): extract::State<mpsc::Sender<Event>>,
+    extract::State(event_tx): extract::State<mpsc::Sender<Command>>,
     extract::ConnectInfo(peer_addr): extract::ConnectInfo<SocketAddr>,
     extract::Json(message): extract::Json<P2PMessage>,
 ) -> response::Json<bool> {
     response::Json(
         event_tx
-            .send(Event::P2PMessage(
+            .send(Command::Event(Event::P2PMessage(
                 match Ipv4Addr::from_str(&peer_addr.ip().to_string()) {
                     Ok(ip) => Some(Peer::new(ip)),
                     Err(_) => None,
                 },
                 message,
-            ))
+            )))
             .await
             .is_ok(),
     )

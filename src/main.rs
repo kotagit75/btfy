@@ -14,7 +14,7 @@ use crate::{
     node::save_chain,
     p2p::Peer,
     state::State,
-    update::{run_effect, update},
+    update::{Command, Event, UpdateResult, run_effect, update},
 };
 
 pub mod api;
@@ -56,31 +56,45 @@ async fn main() {
     let beacon_cache = Arc::new(InMemoryBeaconCache::new());
 
     if args.mining {
-        let _ = event_tx.send(update::Event::MineBlock).await;
+        let _ = event_tx.send(Command::Event(Event::MineBlock)).await;
     }
     if let Some(address) = args.peer {
         match Ipv4Addr::from_str(&address) {
             Ok(ip) => {
-                let _ = event_tx.send(update::Event::AddPeer(Peer::new(ip))).await;
+                let _ = event_tx
+                    .send(Command::Event(Event::AddPeer(Peer::new(ip))))
+                    .await;
             }
             Err(e) => error!("invalid ip address: {}", e),
         }
     }
     let mut previous_chain = state.chain.clone();
 
-    while let Some(event) = event_rx.recv().await {
+    while let Some(command) = event_rx.recv().await {
+        let (event, response_tx) = match command {
+            Command::Event(event) => (event, None),
+            Command::ApiRequest(event, response_tx) => (event, Some(response_tx)),
+        };
+        let previous_state = state.clone();
         let (new_state, effect) = update(event, state, beacon_cache.as_ref()).await;
+        let changed = new_state != previous_state;
         state = new_state.clone();
         if state.chain != previous_chain {
             let _ = save_chain(&state.chain).inspect_err(|e| error!("failed to save chain: {}", e));
             previous_chain = state.chain.clone();
         }
         let _ = state_tx.send(state.clone());
+        if let Some(response_tx) = response_tx {
+            let _ = response_tx.send(UpdateResult {
+                changed,
+                effect: effect.clone(),
+            });
+        }
         let event_tx_clone = event_tx.clone();
         tokio::spawn(async move {
             let events = run_effect(new_state, effect).await;
             for event in events {
-                let _ = event_tx_clone.send(event).await;
+                let _ = event_tx_clone.send(Command::Event(event)).await;
             }
         });
     }
@@ -107,7 +121,7 @@ fn init_state() -> Option<State> {
 
 async fn init_p2p_and_api(
     state_rx: watch::Receiver<State>,
-    event_tx: mpsc::Sender<update::Event>,
+    event_tx: mpsc::Sender<Command>,
 ) -> () {
     let event_tx_clone = event_tx.clone();
     tokio::spawn(async move {

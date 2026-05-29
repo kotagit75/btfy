@@ -6,13 +6,13 @@ use std::{
 use axum::{
     Router,
     extract::{self, Path},
-    http::HeaderValue,
+    http::{HeaderValue, StatusCode},
     response,
     routing::{get, post},
 };
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{mpsc, watch};
+use tokio::sync::{mpsc, oneshot, watch};
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::{
@@ -20,11 +20,43 @@ use crate::{
     config::CONFIG,
     p2p::Peer,
     state::State,
-    update::Event,
+    update::{Command, Event, UpdateResult},
     util::key::PK,
 };
 
-pub async fn init_api(event_tx: mpsc::Sender<Event>, state_rx: watch::Receiver<State>) {
+type AppState = (mpsc::Sender<Command>, watch::Receiver<State>);
+
+fn read_state<T, F>(state_rx: &watch::Receiver<State>, f: F) -> T
+where
+    F: FnOnce(&State) -> T,
+{
+    let state = state_rx.borrow();
+    f(&state)
+}
+
+fn json_query<T, F>(state_rx: &watch::Receiver<State>, f: F) -> response::Json<T>
+where
+    T: Serialize,
+    F: FnOnce(&State) -> T,
+{
+    response::Json(read_state(state_rx, f))
+}
+
+async fn dispatch_event(
+    event_tx: &mpsc::Sender<Command>,
+    event: Event,
+) -> Result<UpdateResult, StatusCode> {
+    let (response_tx, response_rx) = oneshot::channel();
+    event_tx
+        .send(Command::ApiRequest(event, response_tx))
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    response_rx
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
+}
+
+pub async fn init_api(event_tx: mpsc::Sender<Command>, state_rx: watch::Receiver<State>) {
     let allowed_origin = format!("http://localhost:{}", CONFIG.cors_allow_port);
     let cors = CorsLayer::new()
         .allow_origin([allowed_origin.parse::<HeaderValue>().unwrap()])
@@ -51,30 +83,28 @@ pub async fn init_api(event_tx: mpsc::Sender<Event>, state_rx: watch::Receiver<S
 }
 
 async fn handle_query_address(
-    extract::State((_, state_rx)): extract::State<(mpsc::Sender<Event>, watch::Receiver<State>)>,
+    extract::State((_, state_rx)): extract::State<AppState>,
 ) -> String {
-    state_rx.borrow().clone().address.der
+    read_state(&state_rx, |state| state.address.der.clone())
 }
 
 async fn handle_query_chain(
-    extract::State((_, state_rx)): extract::State<(mpsc::Sender<Event>, watch::Receiver<State>)>,
+    extract::State((_, state_rx)): extract::State<AppState>,
 ) -> response::Json<Chain> {
-    response::Json(state_rx.borrow().clone().chain)
+    json_query(&state_rx, |state| state.chain.clone())
 }
 
 async fn handle_query_balance(
-    extract::State((_, state_rx)): extract::State<(mpsc::Sender<Event>, watch::Receiver<State>)>,
+    extract::State((_, state_rx)): extract::State<AppState>,
 ) -> response::Json<u64> {
-    let state = state_rx.borrow().clone();
-    response::Json(state.chain.get_balance(&state.address))
+    json_query(&state_rx, |state| state.chain.get_balance(&state.address))
 }
 
 async fn handle_query_balance_with_address(
-    extract::State((_, state_rx)): extract::State<(mpsc::Sender<Event>, watch::Receiver<State>)>,
+    extract::State((_, state_rx)): extract::State<AppState>,
     Path(address): Path<String>,
 ) -> response::Json<u64> {
-    let state = state_rx.borrow().clone();
-    response::Json(state.chain.get_balance(&Address { der: address }))
+    json_query(&state_rx, |state| state.chain.get_balance(&Address { der: address }))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -84,21 +114,21 @@ struct TransactionPayload {
     fee: u64,
 }
 async fn handle_command_transaction(
-    extract::State((event_tx, _)): extract::State<(mpsc::Sender<Event>, watch::Receiver<State>)>,
+    extract::State((event_tx, _)): extract::State<AppState>,
     extract::Json(payload): extract::Json<TransactionPayload>,
-) -> response::Json<bool> {
-    response::Json(
-        event_tx
-            .send(Event::AddTransaction(
-                PK {
-                    der: payload.recipient,
-                },
-                payload.send_amount,
-                payload.fee,
-            ))
-            .await
-            .is_ok(),
+) -> Result<response::Json<UpdateResult>, StatusCode> {
+    let result = dispatch_event(
+        &event_tx,
+        Event::AddTransaction(
+            PK {
+                der: payload.recipient,
+            },
+            payload.send_amount,
+            payload.fee,
+        ),
     )
+    .await?;
+    Ok(response::Json(result))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -106,11 +136,10 @@ struct PeerPayload {
     ip: String,
 }
 async fn handle_command_peer(
-    extract::State((event_tx, _)): extract::State<(mpsc::Sender<Event>, watch::Receiver<State>)>,
+    extract::State((event_tx, _)): extract::State<AppState>,
     extract::Json(payload): extract::Json<PeerPayload>,
-) -> response::Json<bool> {
-    response::Json(match Ipv4Addr::from_str(&payload.ip) {
-        Ok(ip) => event_tx.send(Event::AddPeer(Peer::new(ip))).await.is_ok(),
-        Err(_) => false,
-    })
+) -> Result<response::Json<UpdateResult>, StatusCode> {
+    let ip = Ipv4Addr::from_str(&payload.ip).map_err(|_| StatusCode::BAD_REQUEST)?;
+    let result = dispatch_event(&event_tx, Event::AddPeer(Peer::new(ip))).await?;
+    Ok(response::Json(result))
 }
