@@ -17,7 +17,7 @@ Even without using an API, it is possible to conduct observations by placing sen
 First, let’s run the script for retrieving temperature data that we created in the previous chapter.
 ```bash
 # Example
-python3 examples/open-meteo
+python3 examples/open-meteo.py
 ```
 Next, run Dawn.
 ```bash
