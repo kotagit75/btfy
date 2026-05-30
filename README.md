@@ -13,7 +13,7 @@ Dawn is a cryptocurrency that relies on the randomness of the weather and crypto
 A Japanese article explaining Dawn can be found [here](https://zenn.dev/yuzu_mikan/articles/7e5df1520f183a).
 
 > [!NOTE]
-> Dawn is currently in active development. The API and features may change without notice.
+> Dawn is currently a project in the technical validation phase and in active development. The API and features may change without notice.
 
 ## :sparkles: Features
 - ⛅ Consensus by Weather - Weather data enables rapid consensus building
