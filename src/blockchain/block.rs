@@ -223,9 +223,10 @@ fn create_block_signature(
     sk.sign(&data)
 }
 
+const GENESIS_BLOCK_DATA: &str = include_str!("genesis.txt");
 pub fn genesis_block() -> Block {
     let pk = PK {
-        der: "".to_string(),
+        der: GENESIS_BLOCK_DATA.to_string(),
     };
     Block::new(
         0,
