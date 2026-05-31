@@ -64,6 +64,7 @@ pub async fn init_api(event_tx: mpsc::Sender<Command>, state_rx: watch::Receiver
         .allow_headers(Any);
 
     let app = Router::new()
+        .route("/health", get(handle_query_health))
         .route("/address", get(handle_query_address))
         .route("/chain", get(handle_query_chain))
         .route("/balance", get(handle_query_balance))
@@ -80,6 +81,10 @@ pub async fn init_api(event_tx: mpsc::Sender<Command>, state_rx: watch::Receiver
     info!("API server is running on http://{}/", addr);
     info!("API server allows CORS for {}", allowed_origin);
     axum::serve(listener, app).await.unwrap();
+}
+
+async fn handle_query_health(extract::State((_, _)): extract::State<AppState>) -> &'static str {
+    "ok"
 }
 
 async fn handle_query_address(extract::State((_, state_rx)): extract::State<AppState>) -> String {
