@@ -7,8 +7,8 @@ use crate::{
         address::Address,
         block::{Block, BlockData, genesis_block, solve_block_vdf},
         transaction::{
-            Transaction, TransactionIn, UnspentTransaction, coinbase_transaction,
-            flex_unspent_transactions, get_transaction_out,
+            Transaction, UnspentTransaction, coinbase_transaction, flex_unspent_transactions,
+            get_transaction_out,
         },
     },
     util::key::SK,
@@ -203,10 +203,7 @@ impl Chain {
                 fee,
                 use_unspent.iter().map(|tx| tx.amount).sum::<u64>(),
             ),
-            use_unspent
-                .iter()
-                .map(|tx| TransactionIn { unspent_id: tx.id })
-                .collect(),
+            use_unspent.iter().map(|tx| tx.to_txin()).collect(),
             fee,
             secret_key,
         )?;

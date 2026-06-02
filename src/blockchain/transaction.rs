@@ -77,6 +77,14 @@ impl TransactionIn {
     }
 }
 
+impl UnspentTransaction {
+    pub fn to_txin(&self) -> TransactionIn {
+        TransactionIn {
+            unspent_id: self.id,
+        }
+    }
+}
+
 impl Transaction {
     pub fn new(
         sender: Address,
