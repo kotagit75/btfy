@@ -108,18 +108,18 @@ pub async fn update(event: Event, state: State, beacon_cache: &dyn BeaconCache) 
             let mut sorted_transactions: Vec<_> = state.transactions.clone();
             sorted_transactions.sort_by_key(|tx| tx.fee);
             sorted_transactions.reverse();
-            let transactions_to_mine: Vec<_> = sorted_transactions
-                .iter()
-                .take(MAX_TRANSACTIONS_PER_BLOCK)
-                .cloned()
-                .collect();
+            let (transactions_to_mine, remaining_transactions) = sorted_transactions.split_at(
+                std::cmp::min(MAX_TRANSACTIONS_PER_BLOCK, sorted_transactions.len()),
+            );
+
+            println!("transactions to mine: {}", transactions_to_mine.len());
 
             return (
                 State {
-                    transactions: Vec::new(),
+                    transactions: remaining_transactions.to_vec(),
                     ..state
                 },
-                Effect::MineBlock(transactions_to_mine),
+                Effect::MineBlock(transactions_to_mine.to_vec()),
             );
         }
         Event::CompletedMineBlock(new_block) => {
@@ -134,6 +134,13 @@ pub async fn update(event: Event, state: State, beacon_cache: &dyn BeaconCache) 
                     .chain
                     .add_block(new_block.clone(), true, true, beacon_cache);
             let new_state = State { chain, ..state };
+
+            if changed {
+                info!("completed to add next block");
+            } else {
+                error!("failed to add next block");
+            }
+
             return (new_state, {
                 if changed {
                     Effect::Broadcast(P2PMessage::ResponseBlockChain(vec![new_block]))
@@ -257,7 +264,7 @@ pub async fn run_effect(state: State, effect: Effect) -> Vec<Event> {
     match effect {
         Effect::None => {}
         Effect::MineBlock(transactions) => {
-            info!("start mining block");
+            info!("start generate next block");
             let next_timestamp = Utc::now().timestamp_millis();
             let Some(beacon) =
                 get_beacon(&state.chain.get_latest_block().hash, next_timestamp).await
@@ -273,9 +280,13 @@ pub async fn run_effect(state: State, effect: Effect) -> Vec<Event> {
                 transactions,
                 next_timestamp,
             ) else {
+                error!("failed to generate next block");
                 return vec![Event::MineBlock];
             };
-            info!("completed mining block: {}ms", now.elapsed().as_millis());
+            info!(
+                "completed generate next block: {}ms",
+                now.elapsed().as_millis()
+            );
             return vec![Event::CompletedMineBlock(block), Event::MineBlock];
         }
         Effect::Broadcast(message) => {
@@ -492,9 +503,8 @@ mod tests {
             .collect();
         state.transactions = txs;
 
-        let (next, effect) = run_update(Event::MineBlock, state).await;
+        let (_, effect) = run_update(Event::MineBlock, state).await;
 
-        assert!(next.transactions.is_empty());
         match effect {
             Effect::MineBlock(mined) => {
                 assert_eq!(mined.len(), MAX_TRANSACTIONS_PER_BLOCK);

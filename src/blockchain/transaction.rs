@@ -304,6 +304,22 @@ pub fn flex_unspent_transactions(
     unspent
 }
 
+pub fn transaction_to_unspent_ids(transaction: &Transaction) -> Vec<u64> {
+    transaction
+        .tx_in
+        .iter()
+        .map(|i| i.unspent_id)
+        .collect::<Vec<_>>()
+}
+
+pub fn transactions_to_unspent_ids(transactions: &[Transaction]) -> Vec<u64> {
+    transactions
+        .iter()
+        .flat_map(|tx| &tx.tx_in)
+        .map(|i| i.unspent_id)
+        .collect::<Vec<_>>()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

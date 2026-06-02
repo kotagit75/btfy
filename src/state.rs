@@ -2,7 +2,11 @@ use openssl::error::ErrorStack;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    blockchain::{address::Address, chain::Chain, transaction::Transaction},
+    blockchain::{
+        address::Address,
+        chain::Chain,
+        transaction::{Transaction, transaction_to_unspent_ids, transactions_to_unspent_ids},
+    },
     p2p::Peer,
     util::key::SK,
 };
@@ -29,42 +33,32 @@ impl State {
         })
     }
 
+    fn add_transaction_without_validation(&self, transaction: &Transaction) -> Self {
+        Self {
+            transactions: self
+                .transactions
+                .clone()
+                .into_iter()
+                .chain([transaction.clone()])
+                .collect(),
+            ..self.clone()
+        }
+    }
+
     pub fn add_transaction(&self, transaction: &Transaction) -> (Self, bool) {
-        if !(transaction.is_valid(&self.chain.get_unspent_transactions().0)
-            && transaction.tx_in.iter().all(|tx_in| {
-                self.chain
-                    .find_unspent_transaction(tx_in.unspent_id)
-                    .is_some()
-            }))
-        {
+        let tx_in_ids = transaction_to_unspent_ids(&transaction);
+        let state_tx_in_ids = transactions_to_unspent_ids(&self.transactions);
+
+        let is_valid = transaction.is_valid(&self.chain.get_unspent_transactions().0);
+        let inputs_exist =
+            self.chain.find_unspent_transactions(&tx_in_ids).len() == tx_in_ids.len();
+        let double_spent_in_pool = tx_in_ids.iter().any(|id| state_tx_in_ids.contains(id));
+
+        if !is_valid || !inputs_exist || double_spent_in_pool {
             return (self.clone(), false);
         }
 
-        let tx_in_ids = transaction
-            .tx_in
-            .iter()
-            .map(|tx_in| tx_in.unspent_id)
-            .collect::<Vec<_>>();
-        let state_tx_in_ids = self
-            .transactions
-            .iter()
-            .flat_map(|t| t.tx_in.iter().map(|tx_in| tx_in.unspent_id))
-            .collect::<Vec<_>>();
-        if tx_in_ids.iter().any(|id| state_tx_in_ids.contains(id)) {
-            return (self.clone(), false);
-        }
-        (
-            Self {
-                transactions: self
-                    .transactions
-                    .clone()
-                    .into_iter()
-                    .chain([transaction.clone()])
-                    .collect(),
-                ..self.clone()
-            },
-            true,
-        )
+        (self.add_transaction_without_validation(transaction), true)
     }
 
     pub fn add_peer(&self, peer: &Peer) -> (Self, bool) {

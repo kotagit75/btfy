@@ -8,7 +8,7 @@ use crate::{
         block::{Block, BlockData, genesis_block, solve_block_vdf},
         transaction::{
             Transaction, UnspentTransaction, coinbase_transaction, flex_unspent_transactions,
-            get_transaction_out,
+            get_transaction_out, transactions_to_unspent_ids,
         },
     },
     util::key::SK,
@@ -46,9 +46,9 @@ impl Chain {
     ) -> Result<Block, ErrorStack> {
         let previous_block: Block = self.get_latest_block();
         let next_index: u64 = previous_block.index + 1;
-        let transactions = transactions_without_coinbase
+        let transactions = [coinbase_transaction(issuer, next_index)]
             .iter()
-            .chain([&coinbase_transaction(issuer, next_index)])
+            .chain(&transactions_without_coinbase)
             .cloned()
             .collect::<Vec<Transaction>>();
         let block_data = BlockData::new(
@@ -148,6 +148,15 @@ impl Chain {
             .cloned()
     }
 
+    pub fn find_unspent_transactions(&self, unspent_ids: &[u64]) -> Vec<UnspentTransaction> {
+        let (unspent_transactions, _) = self.get_unspent_transactions();
+        unspent_transactions
+            .iter()
+            .filter(|unspent| unspent_ids.contains(&unspent.id))
+            .cloned()
+            .collect()
+    }
+
     pub fn filter_unspent_transactions_by_address(
         &self,
         address: &Address,
@@ -172,11 +181,7 @@ impl Chain {
         let amount = send_amount + fee;
 
         let mut filtered_unspent_transactions = self.filter_unspent_transactions_by_address(sender);
-        let used_unspent_ids: Vec<u64> = used_transactions
-            .iter()
-            .flat_map(|tx| &tx.tx_in)
-            .map(|i| i.unspent_id)
-            .collect();
+        let used_unspent_ids: Vec<u64> = transactions_to_unspent_ids(used_transactions);
         filtered_unspent_transactions.retain(|tx| !used_unspent_ids.contains(&tx.id));
         let use_unspent = flex_unspent_transactions(amount, filtered_unspent_transactions);
         if use_unspent.is_empty() {
