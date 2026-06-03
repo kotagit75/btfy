@@ -23,7 +23,7 @@ A Japanese article explaining Dawn can be found [here](https://zenn.dev/yuzu_mik
 - 📡 Peer-to-peer blockchain network
 - 🦀 Implemented in Rust
 
-## 🌤 Why Weather?
+## ⛅ Why Weather?
 Traditional Proof-of-Work systems consume large amounts of electricity to create a source of unpredictability that secures consensus.
 
 Dawn takes a different approach.
