@@ -133,6 +133,7 @@ cargo run --release -- --help
 ## 📚 Documents
 - [docs/installation.md](docs/installation.md)
 - [docs/temperature_script_example.md](docs/temperature_script_example.md)
+- [FAQs](docs/faq.md)
 
 ## 📍 Locations which is collected temperature data
 Dawn gets temperature data from multiple locations. They are currently placed in Japan. The locations are as follows:
