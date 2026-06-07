@@ -1,6 +1,6 @@
 use vdf::{PietrzakVDF, PietrzakVDFParams, VDF, VDFParams};
 
-use crate::config::CONFIG;
+use crate::CONFIG;
 
 const VDF_BITS: u16 = 1024;
 

@@ -6,7 +6,12 @@ extern crate regex;
 
 use clap::Parser;
 use log::Level;
-use std::{net::Ipv4Addr, str::FromStr, sync::Arc};
+use serde::Deserialize;
+use std::{
+    net::Ipv4Addr,
+    str::FromStr,
+    sync::{Arc, LazyLock},
+};
 use tokio::sync::{mpsc, watch};
 
 use crate::{
@@ -20,29 +25,14 @@ use crate::{
 pub mod api;
 pub mod beacon;
 pub mod blockchain;
-pub mod config;
 pub mod node;
 pub mod p2p;
 pub mod state;
 pub mod update;
 pub mod util;
 
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Args {
-    /// Whether to mine blocks
-    #[arg(short, long)]
-    mining: bool,
-
-    /// The IP address to add to the peer list
-    #[arg(short, long)]
-    peer: Option<String>,
-}
-
 #[tokio::main]
 async fn main() {
-    let args = Args::parse();
-
     logger::init_with_level(Level::Info).unwrap();
 
     let Some(mut state) = init_state() else {
@@ -55,10 +45,10 @@ async fn main() {
     init_p2p_and_api(state_rx, event_tx.clone()).await;
     let beacon_cache = Arc::new(InMemoryBeaconCache::new());
 
-    if args.mining {
+    if CONFIG.args.mining {
         let _ = event_tx.send(Command::Event(Event::MineBlock)).await;
     }
-    if let Some(address) = args.peer {
+    if let Some(address) = CONFIG.args.peer.clone() {
         match Ipv4Addr::from_str(&address) {
             Ok(ip) => {
                 let _ = event_tx
@@ -128,3 +118,52 @@ async fn init_p2p_and_api(state_rx: watch::Receiver<State>, event_tx: mpsc::Send
         p2p::init_p2p(event_tx).await;
     });
 }
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Whether to mine blocks
+    #[arg(short, long)]
+    mining: bool,
+
+    /// The IP address to add to the peer list
+    #[arg(short, long)]
+    peer: Option<String>,
+
+    /// The port to listen on for the API
+    #[arg(short, long, default_value = "8080")]
+    api_port: u16,
+
+    /// The port to allow CORS requests from
+    #[arg(short, long, default_value = "3000")]
+    cors_allow_port: u16,
+}
+#[derive(Debug, Clone, Deserialize)]
+pub struct InternalConfig {
+    pub p2p_port: u16,
+    pub vdf_difficulty: u64,
+}
+pub struct Config {
+    args: Args,
+    internal_config: InternalConfig,
+}
+
+const INTERNAL_CONFIG_JSON: &str = include_str!("config.json");
+pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
+    let args = Args::parse();
+
+    let internal_config: InternalConfig = match serde_json::from_str(INTERNAL_CONFIG_JSON) {
+        Ok(config) => config,
+        Err(e) => {
+            eprintln!("failed to parse internal config: {}", e);
+            InternalConfig {
+                p2p_port: 62697,
+                vdf_difficulty: 100000,
+            }
+        }
+    };
+    Config {
+        args,
+        internal_config,
+    }
+});

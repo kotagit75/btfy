@@ -16,8 +16,8 @@ use tokio::sync::{mpsc, oneshot, watch};
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::{
+    CONFIG,
     blockchain::{address::Address, chain::Chain},
-    config::CONFIG,
     p2p::Peer,
     state::State,
     update::{Command, Event, UpdateResult},
@@ -57,7 +57,7 @@ async fn dispatch_event(
 }
 
 pub async fn init_api(event_tx: mpsc::Sender<Command>, state_rx: watch::Receiver<State>) {
-    let allowed_origin = format!("http://localhost:{}", CONFIG.cors_allow_port);
+    let allowed_origin = format!("http://localhost:{}", CONFIG.args.cors_allow_port);
     let cors = CorsLayer::new()
         .allow_origin([allowed_origin.parse::<HeaderValue>().unwrap()])
         .allow_methods([Method::GET, Method::POST])
@@ -75,7 +75,7 @@ pub async fn init_api(event_tx: mpsc::Sender<Command>, state_rx: watch::Receiver
         .layer(cors);
     let addr = SocketAddr::new(
         std::net::IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
-        CONFIG.api_port,
+        CONFIG.args.api_port,
     );
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     info!("API server is running on http://{}/", addr);

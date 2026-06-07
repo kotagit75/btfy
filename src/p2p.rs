@@ -10,8 +10,8 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 
 use crate::{
+    CONFIG,
     blockchain::{block::Block, transaction::Transaction},
-    config::CONFIG,
     update::{Command, Event},
 };
 
