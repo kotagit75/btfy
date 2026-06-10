@@ -19,7 +19,7 @@ Weather is one candidate.
 A Japanese article explaining Dawn can be found [here](https://zenn.dev/yuzu_mikan/articles/7e5df1520f183a).
 
 > [!NOTE]
-> Dawn is currently a project in the technical validation phase and in active development. The API and features may change without notice.
+> Dawn is currently a project in the technical validation phase and in active development. The API and features may change without notice.  
 > Star ⭐ this repo if you find this project promising!
 
 ## 🌟 Features
