@@ -1,6 +1,6 @@
 <div align="center">
     <img src="assets/logo.svg" height=200>
-    <h1>btfly</h1>
+    <h1>Btfly</h1>
     <h2>A Blockchain Secured by Weather Observations</h2>
 </div>
 
