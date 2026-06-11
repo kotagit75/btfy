@@ -1,25 +1,25 @@
 <div align="center">
     <img src="assets/logo.svg" height=200>
-    <h1>Dawn</h1>
+    <h1>btfly</h1>
     <h2>A Blockchain Secured by Weather Observations</h2>
 </div>
 
-Dawn is an experimental blockchain that explores whether weather observations can be used as a consensus beacon. By combining weather-derived beacons with Verifiable Delay Functions (VDFs), Dawn investigates an alternative approach to blockchain consensus.
+btfly is an experimental blockchain that explores whether weather observations can be used as a consensus beacon. By combining weather-derived beacons with Verifiable Delay Functions (VDFs), btfly investigates an alternative approach to blockchain consensus.
 
 Bitcoin creates unpredictability through computation.
 
-Dawn explores whether naturally occurring unpredictability already exists in the real world.
+btfly explores whether naturally occurring unpredictability already exists in the real world.
 
 Weather is one candidate.
 
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat)](LICENSE)
 ![Rust](https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white)
-![GitHub Actions Results](https://github.com/kotagit75/Dawn/actions/workflows/test.yaml/badge.svg)
+![GitHub Actions Results](https://github.com/kotagit75/btfly/actions/workflows/test.yaml/badge.svg)
 
-A Japanese article explaining Dawn can be found [here](https://zenn.dev/yuzu_mikan/articles/7e5df1520f183a).
+A Japanese article explaining btfly can be found [here](https://zenn.dev/yuzu_mikan/articles/7e5df1520f183a).
 
 > [!NOTE]
-> Dawn is currently a project in the technical validation phase and in active development. The API and features may change without notice.  
+> btfly is currently a project in the technical validation phase and in active development. The API and features may change without notice.  
 > Star ⭐ this repo if you find this project promising!
 
 ## 🌟 Features
@@ -31,11 +31,11 @@ A Japanese article explaining Dawn can be found [here](https://zenn.dev/yuzu_mik
 ## ⛅ Why Weather?
 Traditional Proof-of-Work systems consume large amounts of electricity to create a source of unpredictability that secures consensus.
 
-Dawn takes a different approach.
+btfly takes a different approach.
 
-Instead of spending energy on computational puzzles, Dawn derives unpredictability from real-world weather observations. Future weather conditions cannot be predicted perfectly, making weather data a naturally occurring source of entropy.
+Instead of spending energy on computational puzzles, btfly derives unpredictability from real-world weather observations. Future weather conditions cannot be predicted perfectly, making weather data a naturally occurring source of entropy.
 
-This allows Dawn to build consensus without requiring energy-intensive mining.
+This allows btfly to build consensus without requiring energy-intensive mining.
 
 ## 🎯 How does it work?
 
@@ -43,7 +43,7 @@ A weather observation is used as a beacon.
 
 A beacon is an externally observed value that is difficult to predict before it becomes publicly available.
 
-In Dawn, weather measurements collected from multiple locations serve as the beacon.
+In btfly, weather measurements collected from multiple locations serve as the beacon.
 
 The consensus process can be summarized as follows:
 
@@ -68,7 +68,7 @@ The hash chain further prevents attackers from generating alternative histories 
 
 ## 🔒 Security Considerations
 
-Dawn is an experimental consensus mechanism and its security properties are still being evaluated.
+btfly is an experimental consensus mechanism and its security properties are still being evaluated.
 
 The current design assumes:
 
@@ -84,9 +84,9 @@ This project should currently be considered experimental and not production-read
 ## 🚀 Quick Start
 ```bash
 sudo apt -y install openssl
-git clone https://github.com/kotagit75/Dawn.git
-cd Dawn
-chmod +x example/open-meteo.py commands/run.sh commands/dawn-cli.sh
+git clone https://github.com/kotagit75/btfly.git
+cd btfly
+chmod +x example/open-meteo.py commands/run.sh commands/btfly-cli.sh
 ./commands/run.sh example/open-meteo.py
 ```
 
@@ -94,10 +94,10 @@ chmod +x example/open-meteo.py commands/run.sh commands/dawn-cli.sh
 
 ### Run in Docker
 ```bash
-git clone https://github.com/kotagit75/Dawn.git
-cd Dawn
-docker build ./ -t dawn
-docker run -p 8080:8080 -p 62697:62697 -p 8000:8000 --network=host dawn:latest
+git clone https://github.com/kotagit75/btfly.git
+cd btfly
+docker build ./ -t btfly
+docker run -p 8080:8080 -p 62697:62697 -p 8000:8000 --network=host btfly:latest
 ```
 
 ### Usage
@@ -112,24 +112,24 @@ cargo run --release -- --mining
 cargo run --release -- --help
 
 # check health
-./commands/dawn-cli.sh health
+./commands/btfly-cli.sh health
 
 # get balance
-./commands/dawn-cli.sh getbalance
-./commands/dawn-cli.sh getbalancebyaddress [address]
+./commands/btfly-cli.sh getbalance
+./commands/btfly-cli.sh getbalancebyaddress [address]
 
 # get chain
-./commands/dawn-cli.sh getchain
+./commands/btfly-cli.sh getchain
 
 # send transaction
-./commands/dawn-cli.sh sendtransaction [address] [amount] [fee]
+./commands/btfly-cli.sh sendtransaction [address] [amount] [fee]
 
 # add peer
-./commands/dawn-cli.sh addpeer [IP Addr]
+./commands/btfly-cli.sh addpeer [IP Addr]
 ```
 
 > [!CAUTION]
-> No Guarantee of Monetary Value The "Dawn" project is currently in its development. Any tokens (UTXOs) generated or utilized within this network are intended solely for the technical verification of the unique "Proof of Weather" consensus and overall system stability. They do not represent, nor do they guarantee, any real-world monetary value, convertibility to legal tender, or purchasing power.
+> No Guarantee of Monetary Value The "btfly" project is currently in its development. Any tokens (UTXOs) generated or utilized within this network are intended solely for the technical verification of the unique "Proof of Weather" consensus and overall system stability. They do not represent, nor do they guarantee, any real-world monetary value, convertibility to legal tender, or purchasing power.
 
 ## 📚 Documents
 - [docs/installation.md](docs/installation.md)
@@ -137,7 +137,7 @@ cargo run --release -- --help
 - [FAQs](docs/faq.md)
 
 ## 📍 Locations which is collected temperature data
-Dawn gets temperature data from multiple locations. They are currently placed in Japan. The locations are as follows:
+btfly gets temperature data from multiple locations. They are currently placed in Japan. The locations are as follows:
 
 |Name|Latitude|Longitude|
 |:-:|:-:|:-:|

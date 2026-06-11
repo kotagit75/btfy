@@ -23,10 +23,10 @@ RUN apt-get update && apt-get install -y \
     libgmp10 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/target/release/dawn /usr/local/bin/dawn
+COPY --from=builder /app/target/release/btfly /usr/local/bin/btfly
 
 EXPOSE 8080 62697
 
 VOLUME ["/app/node"]
 
-CMD ["dawn"]
+CMD ["btfly"]

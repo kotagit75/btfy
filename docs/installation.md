@@ -4,13 +4,13 @@
 sudo apt -y install openssl
 
 # Clone the repository (or Download ZIP)
-git clone https://github.com/kotagit75/Dawn.git
+git clone https://github.com/kotagit75/btfly.git
 
 # Navigate to the project directory
-cd Dawn
+cd btfly
 
-# Make the dawn-cli.sh script executable
-chmod +x commands/dawn-cli.sh
+# Make the btfly-cli.sh script executable
+chmod +x commands/btfly-cli.sh
 ```
 
 ### Create a script to retrieve the temperature
@@ -25,7 +25,7 @@ First, let’s run the script for retrieving temperature data that we created in
 # Example
 python3 examples/open-meteo.py
 ```
-Next, run Dawn.
+Next, run btfly.
 ```bash
 cargo run --release -- --mining
 ```

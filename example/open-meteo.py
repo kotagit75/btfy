@@ -17,7 +17,7 @@ def fetch_open_meteo(lat: str, lon: str) -> dict:
     }
     url = OPEN_METEO_BASE + "?" + urlencode(params)
     req = urllib.request.Request(
-        url, headers={"User-Agent": "dawn-temperature-server/1.0"}
+        url, headers={"User-Agent": "btfly-temperature-server/1.0"}
     )
     with urllib.request.urlopen(req, timeout=20) as resp:
         return json.loads(resp.read().decode("utf-8"))
