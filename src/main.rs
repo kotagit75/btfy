@@ -158,7 +158,7 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
             eprintln!("failed to parse internal config: {}", e);
             InternalConfig {
                 p2p_port: 62697,
-                vdf_difficulty: 100000,
+                vdf_difficulty: 5295676,
             }
         }
     };
