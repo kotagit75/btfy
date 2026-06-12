@@ -176,7 +176,7 @@ Btfy gets temperature data from multiple locations. They are currently placed in
 |Naha Airport|26.19990739|127.6467932|
 
 
-[View geojson](src/beacon/target.geojson)
+[View geojson](src/beacon/locations.geojson)
 
 ![map1](assets/map1.png)
 ![map2](assets/map2.png)

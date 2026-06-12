@@ -60,9 +60,9 @@ impl BeaconCache for InMemoryBeaconCache {
     }
 }
 
-const TARGET_GEOJSON: &str = include_str!("beacon/target.geojson");
-static TARGET_LOCATIONS: LazyLock<Vec<geojson::Position>> = LazyLock::new(|| {
-    let Ok(collection) = TARGET_GEOJSON.parse::<FeatureCollection>() else {
+const LOCATIONS_GEOJSON: &str = include_str!("beacon/locations.geojson");
+static LOCATIONS_LOCATIONS: LazyLock<Vec<geojson::Position>> = LazyLock::new(|| {
+    let Ok(collection) = LOCATIONS_GEOJSON.parse::<FeatureCollection>() else {
         return Vec::new();
     };
     collection
@@ -100,14 +100,14 @@ async fn get_temperature(lon: f64, lat: f64, timestamp: i64) -> Option<f32> {
 }
 
 fn choose_locations(latest_block_hash: &Hashed) -> Vec<geojson::Position> {
-    let len = TARGET_LOCATIONS.len();
+    let len = LOCATIONS_LOCATIONS.len();
     if len == 0 {
         return Vec::new();
     }
     latest_block_hash
         .iter()
         .map(|i| (*i as usize) % len)
-        .map(|i| TARGET_LOCATIONS.get(i))
+        .map(|i| LOCATIONS_LOCATIONS.get(i))
         .flatten()
         .cloned()
         .collect()
