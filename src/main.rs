@@ -58,7 +58,6 @@ async fn main() {
             Err(e) => error!("invalid ip address: {}", e),
         }
     }
-    let mut previous_chain = state.chain.clone();
 
     while let Some(command) = event_rx.recv().await {
         let (event, response_tx) = match command {
@@ -66,11 +65,11 @@ async fn main() {
             Command::ApiRequest(event, response_tx) => (event, Some(response_tx)),
         };
         let previous_state = state.clone();
+        let previous_chain = state.chain.clone();
         let (new_state, effect) = update(event, state, beacon_cache.as_ref()).await;
         state = new_state.clone();
         if state.chain != previous_chain {
             let _ = save_chain(&state.chain).inspect_err(|e| error!("failed to save chain: {}", e));
-            previous_chain = state.chain.clone();
         }
         let _ = state_tx.send(state.clone());
         if let Some(response_tx) = response_tx {
