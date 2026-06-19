@@ -67,7 +67,6 @@ async fn main() {
         };
         let previous_state = state.clone();
         let (new_state, effect) = update(event, state, beacon_cache.as_ref()).await;
-        let changed = new_state != previous_state;
         state = new_state.clone();
         if state.chain != previous_chain {
             let _ = save_chain(&state.chain).inspect_err(|e| error!("failed to save chain: {}", e));
@@ -76,7 +75,7 @@ async fn main() {
         let _ = state_tx.send(state.clone());
         if let Some(response_tx) = response_tx {
             let _ = response_tx.send(UpdateResult {
-                changed,
+                changed: new_state != previous_state,
                 effect: effect.clone(),
             });
         }
