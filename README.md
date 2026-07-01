@@ -15,6 +15,7 @@ Weather is one candidate.
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat)](LICENSE)
 ![Rust](https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white)
 ![GitHub Actions Results](https://github.com/kotagit75/btfy/actions/workflows/test.yaml/badge.svg)
+[![Discord](https://img.shields.io/badge/Join%20us%20on-Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/SP9N9PD3Sy)
 
 A Japanese article explaining Btfy can be found [here](https://zenn.dev/yuzu_mikan/articles/7e5df1520f183a).
 
@@ -22,8 +23,6 @@ A Japanese article explaining Btfy can be found [here](https://zenn.dev/yuzu_mik
 > This project is intended for technological exploration and research. It is not intended to promote, advertise, or solicit any product, service, or investment.
 > Btfy is currently a project in the technical validation phase and in active development. The API and features may change without notice.  
 > Star ⭐ this repo if you find this project promising!
-
-> 💬 **Join our Discord community:** [https://discord.gg/SP9N9PD3Sy](https://discord.gg/SP9N9PD3Sy)
 
 ## 🌟 Features
 - ⛅ Proof of Weather consensus
