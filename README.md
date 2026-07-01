@@ -21,6 +21,8 @@ A Japanese article explaining Btfy can be found [here](https://zenn.dev/yuzu_mik
 
 > [!IMPORTANT]
 > This project is intended for technological exploration and research. It is not intended to promote, advertise, or solicit any product, service, or investment.
+
+> [!NOTE]
 > Btfy is currently a project in the technical validation phase and in active development. The API and features may change without notice.  
 > Star ⭐ this repo if you find this project promising!
 
