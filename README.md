@@ -12,8 +12,8 @@ Btfy explores whether naturally occurring unpredictability already exists in the
 
 Weather is one candidate.
 
-[![License](https://img.shields.io/badge/license-MIT-blue?style=flat)](LICENSE)
-![Rust](https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat&style=for-the-badge)](LICENSE)
+![Rust](https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white&style=for-the-badge)
 ![GitHub Actions Results](https://github.com/kotagit75/btfy/actions/workflows/test.yaml/badge.svg)
 [![Discord](https://img.shields.io/badge/Join%20us%20on-Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/SP9N9PD3Sy)
 
