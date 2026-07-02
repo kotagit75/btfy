@@ -51,7 +51,6 @@ pub fn load_or_generate_key() -> Result<SK, ()> {
             Ok(sk) => {
                 save_key(&sk).map_err(|err| {
                     error!("failed to save node key: {}", err);
-                    ()
                 })?;
                 Ok(sk)
             }
