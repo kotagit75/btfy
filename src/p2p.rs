@@ -82,7 +82,7 @@ impl Peer {
     }
     pub async fn write(&self, message: &P2PMessage) -> Result<Response, reqwest::Error> {
         let result = reqwest::Client::new()
-            .post(&self.get_url())
+            .post(self.get_url())
             .json(message)
             .send()
             .await;
