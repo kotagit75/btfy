@@ -83,11 +83,10 @@ pub fn load_or_generate_chain() -> Result<Chain, io::Error> {
     load_chain()
 }
 pub fn load_chain() -> Result<Chain, io::Error> {
-    std::fs::read(NODE_CHAIN_PATH).and_then(|s| {
-        rmp_serde::from_slice(&s).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
-    })
+    std::fs::read(NODE_CHAIN_PATH)
+        .and_then(|s| rmp_serde::from_slice(&s).map_err(|e| io::Error::other(e)))
 }
 pub fn save_chain(chain: &Chain) -> Result<(), io::Error> {
-    let buf = rmp_serde::to_vec(chain).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+    let buf = rmp_serde::to_vec(chain).map_err(|e| io::Error::other(e))?;
     std::fs::write(NODE_CHAIN_PATH, buf)
 }
