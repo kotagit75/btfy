@@ -138,8 +138,7 @@ impl Transaction {
     fn calc_total_input_amount(&self, unspent_transactions: &[UnspentTransaction]) -> u64 {
         self.tx_in
             .iter()
-            .map(|tx_in| tx_in.get_amount(unspent_transactions))
-            .flatten()
+            .flat_map(|tx_in| tx_in.get_amount(unspent_transactions))
             .sum::<u64>()
     }
 
