@@ -57,7 +57,7 @@ impl Chain {
             &transactions,
             &beacon,
             issuer,
-            previous_block.hash.clone(),
+            previous_block.hash,
         );
 
         info!("start calculating vdf solution");

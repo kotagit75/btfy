@@ -51,7 +51,7 @@ impl Block {
                 transactions,
                 &beacon,
                 issuer,
-                previous_hash.clone(),
+                previous_hash,
             ),
             &vdf_solution,
             signature.clone(),
