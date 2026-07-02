@@ -44,7 +44,6 @@ pub fn load_or_generate_key() -> Result<SK, ()> {
         info!("reading node key");
         read_key().map_err(|_| {
             error!("failed to read node key");
-            ()
         })
     } else {
         info!("generating node key");
