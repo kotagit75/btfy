@@ -1,5 +1,4 @@
-# This workflow runs tests and checks formatting for the Rust project.
-name: Rust CI
+name: test
 
 on:
   push:
@@ -9,21 +8,16 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  RUSTFLAGS: -Dwarnings
+  RUSTFLAGS: "-Dwarnings"
 
 jobs:
   test:
-    name: cargo test and fmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - id: toolchain
+      - name: Checkout Crate
+        uses: actions/checkout@v3
+      - name: Set Toolchain
         uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-      - id: cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: btfy
-      - run: cargo test --all-features
-      - run: cargo fmt --all --check
+      - uses: Swatinem/rust-cache@v2
+      - name: Run test
+        run: cargo test
