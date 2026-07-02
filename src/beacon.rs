@@ -70,11 +70,10 @@ static LOCATIONS_LOCATIONS: LazyLock<Vec<geojson::Position>> = LazyLock::new(|| 
         .iter()
         .map(|feature| feature.geometry.clone())
         .flatten()
-        .map(|geometry| match geometry.value {
+        .flat_map(|geometry| match geometry.value {
             GeometryValue::Point { coordinates } => Some(coordinates),
             _ => None,
         })
-        .flatten()
         .collect()
 });
 
