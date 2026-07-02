@@ -56,7 +56,7 @@ impl Chain {
             next_timestamp,
             &transactions,
             &beacon,
-            &issuer,
+            issuer,
             previous_block.hash.clone(),
         );
 

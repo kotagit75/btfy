@@ -46,7 +46,7 @@ impl State {
     }
 
     pub fn add_transaction(&self, transaction: &Transaction) -> (Self, bool) {
-        let tx_in_ids = transaction_to_unspent_ids(&transaction);
+        let tx_in_ids = transaction_to_unspent_ids(transaction);
         let state_tx_in_ids = transactions_to_unspent_ids(&self.transactions);
 
         let is_valid = transaction.is_valid(&self.chain.get_unspent_transactions().0);

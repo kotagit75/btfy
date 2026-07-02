@@ -50,7 +50,7 @@ impl Block {
                 timestamp,
                 transactions,
                 &beacon,
-                &issuer,
+                issuer,
                 previous_hash.clone(),
             ),
             &vdf_solution,
