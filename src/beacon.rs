@@ -68,8 +68,7 @@ static LOCATIONS_LOCATIONS: LazyLock<Vec<geojson::Position>> = LazyLock::new(|| 
     collection
         .features
         .iter()
-        .map(|feature| feature.geometry.clone())
-        .flatten()
+        .flat_map(|feature| feature.geometry.clone())
         .flat_map(|geometry| match geometry.value {
             GeometryValue::Point { coordinates } => Some(coordinates),
             _ => None,
@@ -105,9 +104,7 @@ fn choose_locations(latest_block_hash: &Hashed) -> Vec<geojson::Position> {
     }
     latest_block_hash
         .iter()
-        .map(|i| (*i as usize) % len)
-        .map(|i| LOCATIONS_LOCATIONS.get(i))
-        .flatten()
+        .flat_map(|i| LOCATIONS_LOCATIONS.get((*i as usize) % len))
         .cloned()
         .collect()
 }
