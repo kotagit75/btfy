@@ -269,7 +269,7 @@ pub fn coinbase_transaction(address: &Address, block_height: u64) -> Transaction
 
 pub fn is_valid_coinbase_transaction(transaction: &Transaction, block_height: u64) -> bool {
     transaction.sender == coinbase_address()
-        && transaction.tx_in.len() == 0
+        && transaction.tx_in.is_empty()
         && transaction.out.len() == 1
         && transaction.out[0].amount == coinbase_amount(block_height)
         && transaction
