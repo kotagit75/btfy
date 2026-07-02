@@ -64,7 +64,7 @@ pub fn generate_key() -> Result<SK, ErrorStack> {
 }
 
 pub fn read_key() -> Result<SK, io::Error> {
-    std::fs::read_to_string(NODE_KEY_PATH).map(|der| SK { der: der })
+    std::fs::read_to_string(NODE_KEY_PATH).map(|der| SK { der })
 }
 
 pub fn save_key(sk: &SK) -> Result<(), io::Error> {
