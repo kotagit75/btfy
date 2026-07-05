@@ -69,7 +69,7 @@ impl Chain {
         info!("start calculating vdf solution");
         let vdf_solution = solve_block_vdf(&block_data).unwrap();
         info!("completed calculating vdf solution");
-        Block::new_with_creating_signature(&block_data, vdf_solution, previous_block.hash, sk)
+        Block::new_with_creating_signature(&block_data, vdf_solution, sk)
     }
 
     pub fn is_valid(&self, cache: &dyn BeaconCache) -> bool {

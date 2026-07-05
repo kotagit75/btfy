@@ -34,36 +34,16 @@ pub struct Block {
 }
 
 impl Block {
-    pub fn new(
-        index: u64,
-        timestamp: i64,
-        transactions: &[Transaction],
-        beacon: Beacon,
-        vdf_solution: Vec<u8>,
-        issuer: &Address,
-        previous_hash: Hashed,
-        signature: Signature,
-    ) -> Self {
-        let hash = calculate_hash(
-            &BlockData::new(
-                index,
-                timestamp,
-                transactions,
-                &beacon,
-                issuer,
-                previous_hash,
-            ),
-            &vdf_solution,
-            signature.clone(),
-        );
+    pub fn new(blockdata: &BlockData, vdf_solution: Vec<u8>, signature: Signature) -> Self {
+        let hash = calculate_hash(blockdata, &vdf_solution, signature.clone());
         Self {
-            index,
-            timestamp,
-            transactions: transactions.to_vec(),
-            beacon,
+            index: blockdata.index,
+            timestamp: blockdata.timestamp,
+            transactions: blockdata.transactions.to_vec(),
+            beacon: blockdata.beacon.clone(),
             vdf_solution,
-            previous_hash,
-            issuer: issuer.clone(),
+            previous_hash: blockdata.previous_hash,
+            issuer: blockdata.issuer.clone(),
             signature,
             hash,
         }
@@ -71,17 +51,11 @@ impl Block {
     pub fn new_with_creating_signature(
         blockdata: &BlockData,
         vdf_solution: Vec<u8>,
-        previous_hash: Hashed,
         sk: &SK,
     ) -> Result<Self, ErrorStack> {
         Ok(Self::new(
-            blockdata.index,
-            blockdata.timestamp,
-            blockdata.transactions,
-            blockdata.beacon.clone(),
+            blockdata,
             vdf_solution.clone(),
-            blockdata.issuer,
-            previous_hash,
             create_block_signature(blockdata, &vdf_solution, sk)?,
         ))
     }
@@ -213,16 +187,15 @@ pub fn genesis_block() -> Block {
     let pk = PK {
         der: GENESIS_BLOCK_DATA.to_string(),
     };
-    Block::new(
-        0,
-        0,
-        &[],
-        Beacon { values: Vec::new() },
-        Vec::new(),
-        &pk,
-        [0; 32],
-        Vec::new(),
-    )
+    let blockdata = BlockData {
+        index: 0,
+        timestamp: 0,
+        transactions: &[],
+        beacon: &Beacon { values: Vec::new() },
+        previous_hash: [0; 32],
+        issuer: &pk,
+    };
+    Block::new(&blockdata, Vec::new(), Vec::new())
 }
 
 fn block_to_buf_for_vdf(blockdata: &BlockData) -> Vec<u8> {
