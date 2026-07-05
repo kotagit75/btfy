@@ -22,6 +22,12 @@ pub struct Chain {
     pub blocks: Vec<Block>,
 }
 
+impl Default for Chain {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Chain {
     pub fn new() -> Self {
         Self {
