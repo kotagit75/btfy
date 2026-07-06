@@ -8,9 +8,6 @@ git clone https://github.com/kotagit75/btfy.git
 
 # Navigate to the project directory
 cd btfy
-
-# Make the btfy-cli script executable
-chmod +x commands/btfy-cli
 ```
 
 ### Create a script to retrieve the temperature
@@ -31,6 +28,5 @@ cargo run --release -- --mining
 ```
 You can run these two commands together using the following command:
 ```bash
-chmod +x ./commands/run.sh
 ./commands/run.sh example/open-meteo.py
 ```

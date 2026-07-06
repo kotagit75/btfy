@@ -91,7 +91,6 @@ This project should currently be considered experimental and not production-read
 sudo apt -y install openssl
 git clone https://github.com/kotagit75/btfy.git
 cd btfy
-chmod +x example/open-meteo.py commands/run.sh commands/btfy-cli
 ./commands/run.sh example/open-meteo.py
 ```
 
