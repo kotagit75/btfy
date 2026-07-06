@@ -9,8 +9,8 @@ git clone https://github.com/kotagit75/btfy.git
 # Navigate to the project directory
 cd btfy
 
-# Make the btfy-cli.sh script executable
-chmod +x commands/btfy-cli.sh
+# Make the btfy-cli script executable
+chmod +x commands/btfy-cli
 ```
 
 ### Create a script to retrieve the temperature

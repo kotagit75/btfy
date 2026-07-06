@@ -91,7 +91,7 @@ This project should currently be considered experimental and not production-read
 sudo apt -y install openssl
 git clone https://github.com/kotagit75/btfy.git
 cd btfy
-chmod +x example/open-meteo.py commands/run.sh commands/btfy-cli.sh
+chmod +x example/open-meteo.py commands/run.sh commands/btfy-cli
 ./commands/run.sh example/open-meteo.py
 ```
 
@@ -117,20 +117,20 @@ cargo run --release -- --mining
 cargo run --release -- --help
 
 # check health
-./commands/btfy-cli.sh health
+./commands/btfy-cli health
 
 # get balance
-./commands/btfy-cli.sh getbalance
-./commands/btfy-cli.sh getbalancebyaddress [address]
+./commands/btfy-cli getbalance
+./commands/btfy-cli getbalancebyaddress [address]
 
 # get chain
-./commands/btfy-cli.sh getchain
+./commands/btfy-cli getchain
 
 # send transaction
-./commands/btfy-cli.sh sendtransaction [address] [amount] [fee]
+./commands/btfy-cli sendtransaction [address] [amount] [fee]
 
 # add peer
-./commands/btfy-cli.sh addpeer [IP Addr]
+./commands/btfy-cli addpeer [IP Addr]
 ```
 
 > [!CAUTION]
