@@ -14,7 +14,7 @@ use crate::{
         hash::{Hashed, hash},
         key::{PK, SK},
         signature::Signature,
-        vdf::{solve, verify_solution},
+        vdf::{solution_to_string, solve, verify_solution},
     },
 };
 
@@ -164,11 +164,19 @@ impl<'a> Display for BlockData<'a> {
 }
 
 pub fn calculate_hash(blockdata: &BlockData, vdf_solution: &[u8], signature: Signature) -> Hashed {
-    hash(format!("{}{:?}{:?}", blockdata, vdf_solution, signature).as_bytes())
+    hash(
+        format!(
+            "{}{}{:?}",
+            blockdata,
+            solution_to_string(vdf_solution),
+            signature
+        )
+        .as_bytes(),
+    )
 }
 
 fn block_to_buf_for_signature(blockdata: &BlockData, vdf_solution: &[u8]) -> Vec<u8> {
-    format!("{}{:?}", blockdata, vdf_solution)
+    format!("{}{}", blockdata, solution_to_string(vdf_solution))
         .as_bytes()
         .to_vec()
 }

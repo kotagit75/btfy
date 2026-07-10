@@ -17,3 +17,7 @@ pub fn verify_solution(challenge: &[u8], solution: &[u8]) -> bool {
 pub fn solve(challenge: &[u8]) -> Result<Vec<u8>, vdf::InvalidIterations> {
     create_vdf().solve(challenge, CONFIG.internal_config.vdf_difficulty)
 }
+
+pub fn solution_to_string(solution: &[u8]) -> String {
+    solution.iter().map(|n| n.to_string()).collect::<String>()
+}
