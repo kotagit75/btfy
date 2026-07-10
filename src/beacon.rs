@@ -9,7 +9,7 @@ use crate::{CONFIG, util::hash::Hashed};
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Beacon {
-    pub values: Vec<f32>,
+    pub values: Vec<i32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -78,7 +78,7 @@ static LOCATIONS_LOCATIONS: LazyLock<Vec<geojson::Position>> = LazyLock::new(|| 
 
 const TEMPERATURE_SERVER_URL: &str = "http://localhost:8000/";
 
-async fn get_temperature(lon: f64, lat: f64, timestamp: i64) -> Option<f32> {
+async fn get_temperature(lon: f64, lat: f64, timestamp: i64) -> Option<i32> {
     let result = reqwest::Client::new()
         .get(TEMPERATURE_SERVER_URL)
         .timeout(std::time::Duration::from_secs(CONFIG.args.beacon_timeout))
@@ -90,7 +90,12 @@ async fn get_temperature(lon: f64, lat: f64, timestamp: i64) -> Option<f32> {
         .send()
         .await;
     match result {
-        Ok(res) => res.json::<f32>().await.ok(),
+        // Record the temperature as an integer by multiplying the value (up to one decimal places) by 10.
+        Ok(res) => res
+            .json::<f32>()
+            .await
+            .ok()
+            .map(|t| (t * 10.0).round() as i32),
         Err(err) => {
             error!("failed to retrieve the temperature: {}", err);
             None
@@ -113,7 +118,7 @@ fn choose_locations(latest_block_hash: &Hashed) -> Vec<geojson::Position> {
 pub async fn get_beacon(latest_block_hash: &Hashed, timestamp: i64) -> Option<Beacon> {
     let locations: Vec<geojson::Position> = choose_locations(latest_block_hash);
     info!("start getting beacon");
-    let mut temperatures: Vec<f32> = Vec::new();
+    let mut temperatures: Vec<i32> = Vec::new();
     for (i, pos) in locations.iter().enumerate() {
         info!("getting temperature for location {}", i);
         if let Some(temp) = get_temperature(pos[0], pos[1], timestamp).await {
@@ -154,5 +159,7 @@ pub fn is_valid_beacon(own_beacon: &Beacon, target_beacon: &Beacon) -> bool {
         .values
         .iter()
         .zip(target_beacon.values.iter())
-        .all(|(a, b)| (a - b).abs() <= 0.5)
+        .all(
+            |(a, b)| (a - b).abs() <= 5, /* Allowable error is within 0.5 degrees Celsius.*/
+        )
 }

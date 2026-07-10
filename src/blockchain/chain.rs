@@ -257,7 +257,7 @@ mod tests {
         (pk, sk)
     }
 
-    fn dummy_block(prev: &Block, txs: Vec<Transaction>, beacon: f32) -> Block {
+    fn dummy_block(prev: &Block, txs: Vec<Transaction>, beacon: i32) -> Block {
         Block {
             index: prev.index + 1,
             timestamp: prev.timestamp + 1,
@@ -275,7 +275,7 @@ mod tests {
 
     fn chain_with_coinbase(miner: &Address) -> Chain {
         let g = genesis_block();
-        let b1 = dummy_block(&g, vec![coinbase_transaction(miner, 1)], 1.0);
+        let b1 = dummy_block(&g, vec![coinbase_transaction(miner, 1)], 1);
         Chain {
             blocks: vec![g, b1],
         }
@@ -350,8 +350,8 @@ mod tests {
         let (b, _) = keypair();
 
         let g = genesis_block();
-        let b1 = dummy_block(&g, vec![coinbase_transaction(&a, 0)], 1.0);
-        let b2 = dummy_block(&b1, vec![coinbase_transaction(&b, 1)], 2.0);
+        let b1 = dummy_block(&g, vec![coinbase_transaction(&a, 0)], 1);
+        let b2 = dummy_block(&b1, vec![coinbase_transaction(&b, 1)], 2);
         let c = Chain {
             blocks: vec![g, b1, b2],
         };
@@ -363,7 +363,7 @@ mod tests {
     #[test]
     fn add_block_rejects_invalid_block() {
         let c = Chain::new();
-        let bad = dummy_block(&c.get_latest_block(), vec![], 1.0);
+        let bad = dummy_block(&c.get_latest_block(), vec![], 1);
         let cache = InMemoryBeaconCache::new();
         let (next, changed) = c.add_block(bad, false, false, &cache);
         assert!(!changed);
@@ -375,7 +375,7 @@ mod tests {
         let base = Chain::new();
         let g = genesis_block();
         let longer_but_invalid = Chain {
-            blocks: vec![g.clone(), dummy_block(&g, vec![], 1.0)],
+            blocks: vec![g.clone(), dummy_block(&g, vec![], 1)],
         };
         let cache = InMemoryBeaconCache::new();
         assert_eq!(base.replace(longer_but_invalid, &cache), base);
@@ -397,9 +397,9 @@ mod tests {
     #[test]
     fn get_block_depth_counts_from_tip() {
         let g = genesis_block();
-        let b1 = dummy_block(&g, vec![], 1.0);
-        let b2 = dummy_block(&b1, vec![], 2.0);
-        let b3 = dummy_block(&b2, vec![], 3.0);
+        let b1 = dummy_block(&g, vec![], 1);
+        let b2 = dummy_block(&b1, vec![], 2);
+        let b3 = dummy_block(&b2, vec![], 3);
         let c = Chain {
             blocks: vec![g.clone(), b1.clone(), b2.clone(), b3.clone()],
         };
