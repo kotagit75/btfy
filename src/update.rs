@@ -116,8 +116,6 @@ pub async fn update(event: Event, state: State, beacon_cache: &dyn BeaconCache) 
                 std::cmp::min(MAX_TRANSACTIONS_PER_BLOCK, sorted_transactions.len()),
             );
 
-            println!("transactions to mine: {}", transactions_to_mine.len());
-
             return (
                 State {
                     transactions: remaining_transactions.to_vec(),

@@ -5,7 +5,7 @@ use std::{
     sync::{LazyLock, Mutex},
 };
 
-use crate::util::hash::Hashed;
+use crate::{CONFIG, util::hash::Hashed};
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Beacon {
@@ -81,6 +81,7 @@ const TEMPERATURE_SERVER_URL: &str = "http://localhost:8000/";
 async fn get_temperature(lon: f64, lat: f64, timestamp: i64) -> Option<f32> {
     let result = reqwest::Client::new()
         .get(TEMPERATURE_SERVER_URL)
+        .timeout(std::time::Duration::from_secs(CONFIG.args.beacon_timeout))
         .query(&[
             ("lat", lat.to_string()),
             ("lon", lon.to_string()),
