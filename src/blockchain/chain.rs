@@ -1,4 +1,3 @@
-use openssl::error::ErrorStack;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -49,7 +48,7 @@ impl Chain {
         beacon: Beacon,
         transactions_without_coinbase: Vec<Transaction>,
         next_timestamp: i64,
-    ) -> Result<Block, ErrorStack> {
+    ) -> Block {
         let previous_block: Block = self.get_latest_block();
         let next_index: u64 = previous_block.index + 1;
         let transactions = [coinbase_transaction(issuer, next_index)]
@@ -184,7 +183,7 @@ impl Chain {
         secret_key: &SK,
         used_transactions: &[Transaction],
         fee: u64,
-    ) -> Result<Option<Transaction>, ErrorStack> {
+    ) -> Option<Transaction> {
         let amount = send_amount + fee;
 
         let mut filtered_unspent_transactions = self.filter_unspent_transactions_by_address(sender);
@@ -192,7 +191,7 @@ impl Chain {
         filtered_unspent_transactions.retain(|tx| !used_unspent_ids.contains(&tx.id));
         let use_unspent = flex_unspent_transactions(amount, filtered_unspent_transactions);
         if use_unspent.is_empty() {
-            return Ok(None);
+            return None;
         }
 
         let transaction = Transaction::new_with_creating_signature(
@@ -207,8 +206,8 @@ impl Chain {
             use_unspent.iter().map(|tx| tx.to_txin()).collect(),
             fee,
             secret_key,
-        )?;
-        Ok(Some(transaction))
+        );
+        Some(transaction)
     }
 
     pub fn get_balance(&self, address: &Address) -> u64 {
@@ -250,10 +249,12 @@ mod tests {
     use crate::beacon::{Beacon, InMemoryBeaconCache};
     use crate::blockchain::block::{Block, genesis_block};
     use crate::blockchain::transaction::{TransactionIn, coinbase_transaction};
-    use crate::util::key::{SK, generate_pk_and_sk};
+    use crate::util::key::{SK, generate_sk};
+    use crate::util::signature::SignatureWrapper;
 
     fn keypair() -> (Address, SK) {
-        let (pk, sk) = generate_pk_and_sk(512).unwrap();
+        let sk = generate_sk(512);
+        let pk = sk.to_pk();
         (pk, sk)
     }
 
@@ -268,7 +269,7 @@ mod tests {
             vdf_solution: vec![],
             previous_hash: prev.hash,
             issuer: prev.issuer.clone(),
-            signature: vec![],
+            signature: SignatureWrapper::default(),
             hash: [prev.index as u8 + 1; 32],
         }
     }
@@ -305,9 +306,7 @@ mod tests {
         let (sender, sk) = keypair();
         let (recipient, _) = keypair();
         let c = chain_with_coinbase(&sender);
-        let tx = c
-            .generate_transaction(&sender, &recipient, 999, &sk, &[], 0)
-            .unwrap();
+        let tx = c.generate_transaction(&sender, &recipient, 999, &sk, &[], 0);
         assert!(tx.is_none());
     }
 
@@ -319,7 +318,6 @@ mod tests {
 
         let tx = c
             .generate_transaction(&sender, &recipient, 30, &sk, &[], 0)
-            .unwrap()
             .unwrap();
 
         assert_eq!(tx.tx_in, vec![TransactionIn { unspent_id: 1 }]);
@@ -334,12 +332,9 @@ mod tests {
 
         let used = c
             .generate_transaction(&sender, &recipient, 30, &sk, &[], 0)
-            .unwrap()
             .unwrap();
 
-        let next = c
-            .generate_transaction(&sender, &recipient, 10, &sk, &[used], 0)
-            .unwrap();
+        let next = c.generate_transaction(&sender, &recipient, 10, &sk, &[used], 0);
 
         assert!(next.is_none());
     }
@@ -387,9 +382,7 @@ mod tests {
         let (recipient, _) = keypair();
         let c = chain_with_coinbase(&sender);
 
-        let tx = c
-            .generate_transaction(&sender, &recipient, 49, &sk, &[], 2)
-            .unwrap();
+        let tx = c.generate_transaction(&sender, &recipient, 49, &sk, &[], 2);
 
         assert!(tx.is_none());
     }

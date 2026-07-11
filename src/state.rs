@@ -1,4 +1,3 @@
-use openssl::error::ErrorStack;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -23,14 +22,15 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(secret_key: SK, chain: Chain) -> Result<Self, ErrorStack> {
-        secret_key.to_pk().map(|address| Self {
+    pub fn new(secret_key: SK, chain: Chain) -> Self {
+        let address = secret_key.to_pk();
+        Self {
             secret_key,
             address,
             chain,
             transactions: Vec::new(),
             peers: Vec::new(),
-        })
+        }
     }
 
     fn add_transaction_without_validation(&self, transaction: &Transaction) -> Self {

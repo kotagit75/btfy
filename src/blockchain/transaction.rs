@@ -1,9 +1,8 @@
-use openssl::error::ErrorStack;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     blockchain::address::{Address, is_valid_address},
-    util::{key::SK, signature::Signature},
+    util::{key::SK, signature::SignatureWrapper},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -22,7 +21,7 @@ pub struct Transaction {
     pub out: Vec<TransactionOut>,
     pub tx_in: Vec<TransactionIn>,
     pub fee: u64,
-    pub signature: Signature,
+    pub signature: SignatureWrapper,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -91,7 +90,7 @@ impl Transaction {
         out: Vec<TransactionOut>,
         tx_in: Vec<TransactionIn>,
         fee: u64,
-        signature: Signature,
+        signature: SignatureWrapper,
     ) -> Self {
         Self {
             sender,
@@ -107,15 +106,15 @@ impl Transaction {
         tx_in: Vec<TransactionIn>,
         fee: u64,
         sk: &SK,
-    ) -> Result<Self, ErrorStack> {
-        let signature = create_transaction_signature(sender, &out, &tx_in, fee, sk)?;
-        Ok(Self {
+    ) -> Self {
+        let signature = create_transaction_signature(sender, &out, &tx_in, fee, sk);
+        Self {
             sender: sender.clone(),
             out,
             tx_in,
             fee,
             signature,
-        })
+        }
     }
     pub fn verify_signature(&self) -> bool {
         self.sender.verify(
@@ -216,7 +215,7 @@ fn create_transaction_signature(
     tx_in: &[TransactionIn],
     fee: u64,
     sk: &SK,
-) -> Result<Signature, ErrorStack> {
+) -> SignatureWrapper {
     let data = transaction_to_buf_for_signature(sender, out, tx_in, fee);
     sk.sign(&data)
 }
@@ -262,7 +261,7 @@ pub fn coinbase_transaction(address: &Address, block_height: u64) -> Transaction
         }],
         tx_in: Vec::new(),
         fee: 0,
-        signature: Signature::default(),
+        signature: SignatureWrapper::default(),
     }
 }
 
@@ -322,10 +321,11 @@ pub fn transactions_to_unspent_ids(transactions: &[Transaction]) -> Vec<u64> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::key::generate_pk_and_sk;
+    use crate::util::key::generate_sk;
 
     fn keypair() -> (Address, SK) {
-        let (pk, sk) = generate_pk_and_sk(512).unwrap();
+        let sk = generate_sk(512);
+        let pk = sk.to_pk();
         (pk, sk)
     }
 
@@ -343,8 +343,7 @@ mod tests {
             vec![TransactionIn { unspent_id: 1 }],
             0,
             &sk,
-        )
-        .unwrap();
+        );
 
         let unspent_transactions = vec![UnspentTransaction {
             id: 1,
@@ -370,8 +369,7 @@ mod tests {
             vec![TransactionIn { unspent_id: 1 }],
             0,
             &sk,
-        )
-        .unwrap();
+        );
 
         let unspent_transactions = vec![UnspentTransaction {
             id: 1,
@@ -405,8 +403,7 @@ mod tests {
             vec![TransactionIn { unspent_id: 1 }],
             3,
             &sk,
-        )
-        .unwrap();
+        );
 
         assert_eq!(tx.total_amount(), 23);
     }
@@ -431,8 +428,7 @@ mod tests {
             vec![TransactionIn { unspent_id: 1 }],
             0,
             &sk,
-        )
-        .unwrap();
+        );
 
         let prev = vec![
             UnspentTransaction {
@@ -533,8 +529,7 @@ mod tests {
             vec![TransactionIn { unspent_id: 1 }],
             0,
             &sk,
-        )
-        .unwrap();
+        );
 
         let unspent_transactions = vec![UnspentTransaction {
             id: 1,
@@ -560,8 +555,7 @@ mod tests {
             vec![TransactionIn { unspent_id: 1 }],
             2,
             &sk,
-        )
-        .unwrap();
+        );
 
         let unspent_transactions = vec![UnspentTransaction {
             id: 1,
@@ -591,8 +585,7 @@ mod tests {
             vec![TransactionIn { unspent_id: 1 }],
             2,
             &sk,
-        )
-        .unwrap();
+        );
 
         let ok = vec![UnspentTransaction {
             id: 1,

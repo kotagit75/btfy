@@ -1,27 +1,23 @@
-use openssl::{
-    error::ErrorStack,
-    hash::MessageDigest,
-    sign::{Signer, Verifier},
-};
+use rsa::pkcs1v15::{Signature, VerifyingKey};
+use rsa::sha2::Sha256;
+use rsa::signature::{SignatureEncoding, Verifier};
+use rsa::{pkcs1v15::SigningKey, signature::Signer};
+use serde::{Deserialize, Serialize};
 
 use crate::util::key::{PK, SK};
 
-pub type Signature = Vec<u8>;
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
+pub struct SignatureWrapper(Vec<u8>);
 
-pub fn sign(data: &[u8], sk: SK) -> Result<Signature, ErrorStack> {
-    Signer::new(MessageDigest::sha256(), &sk.key()).and_then(|mut signer| {
-        match signer.update(data) {
-            Ok(_) => signer.sign_to_vec(),
-            Err(e) => Err(e),
-        }
-    })
+pub fn sign(data: &[u8], sk: SK) -> SignatureWrapper {
+    let signing_key = SigningKey::<Sha256>::new(sk.key());
+    let signature = signing_key.sign(data);
+    SignatureWrapper(signature.to_vec())
 }
 
-pub fn verify(data: &[u8], pk: PK, signature: Signature) -> bool {
-    Verifier::new(MessageDigest::sha256(), &pk.key())
-        .and_then(|mut verifyer| {
-            verifyer.update(data)?;
-            verifyer.verify(&signature)
-        })
-        .unwrap_or(false)
+pub fn verify(data: &[u8], pk: PK, signature_wrapper: &SignatureWrapper) -> bool {
+    let signature_bytes: &[u8] = &signature_wrapper.0;
+    let signature = Signature::try_from(signature_bytes).unwrap();
+    let verifying_key = VerifyingKey::<Sha256>::new(pk.key());
+    verifying_key.verify(data, &signature).is_ok()
 }

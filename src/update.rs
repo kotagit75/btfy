@@ -85,7 +85,7 @@ pub async fn update(event: Event, state: State, beacon_cache: &dyn BeaconCache) 
                 info!("invalid recipient address: {}", recipient.der);
                 return (state, Effect::None);
             }
-            if let Ok(Some(transaction)) = state.chain.generate_transaction(
+            if let Some(transaction) = state.chain.generate_transaction(
                 &state.address,
                 &recipient,
                 send_amount,
@@ -274,16 +274,13 @@ pub async fn run_effect(state: State, effect: Effect) -> Vec<Event> {
                 return vec![Event::MineBlock];
             };
             let now = time::Instant::now();
-            let Ok(block) = state.chain.generate_next_block(
+            let block = state.chain.generate_next_block(
                 &state.secret_key,
                 &state.address,
                 beacon,
                 transactions,
                 next_timestamp,
-            ) else {
-                error!("failed to generate next block");
-                return vec![Event::MineBlock];
-            };
+            );
             info!(
                 "completed generate next block: {}ms",
                 now.elapsed().as_millis()
@@ -308,12 +305,16 @@ mod tests {
             transaction::coinbase_transaction,
         },
         state::State,
-        util::key::{SK, generate_pk_and_sk},
+        util::{
+            key::{SK, generate_sk},
+            signature::SignatureWrapper,
+        },
     };
     use std::net::Ipv4Addr;
 
     fn keypair() -> (Address, SK) {
-        let (pk, sk) = generate_pk_and_sk(512).unwrap();
+        let sk = generate_sk(512);
+        let pk = sk.to_pk();
         (pk, sk)
     }
 
@@ -326,14 +327,14 @@ mod tests {
             vdf_solution: vec![],
             previous_hash: prev.hash,
             issuer: miner.clone(),
-            signature: vec![],
+            signature: SignatureWrapper::default(),
             hash: [prev.index as u8 + 1; 32],
         }
     }
 
     fn funded_state() -> State {
         let (_, sk) = keypair();
-        let mut state = State::new(sk, Chain::new()).unwrap();
+        let mut state = State::new(sk, Chain::new());
         let g = genesis_block();
         let b1 = dummy_block_with_coinbase(&g, &state.address);
         state.chain = Chain {
@@ -353,7 +354,6 @@ mod tests {
                 &state.transactions,
                 fee,
             )
-            .unwrap()
             .unwrap()
     }
 
@@ -465,14 +465,14 @@ mod tests {
             out: Vec::new(),
             tx_in: Vec::new(),
             fee: 1,
-            signature: Vec::new(),
+            signature: SignatureWrapper::default(),
         };
         let tx2 = Transaction {
             sender: state.address.clone(),
             out: Vec::new(),
             tx_in: Vec::new(),
             fee: 3,
-            signature: Vec::new(),
+            signature: SignatureWrapper::default(),
         };
         state.transactions = vec![tx1, tx2];
 
@@ -499,7 +499,7 @@ mod tests {
                 out: Vec::new(),
                 tx_in: Vec::new(),
                 fee: i as u64,
-                signature: Vec::new(),
+                signature: SignatureWrapper::default(),
             })
             .collect();
         state.transactions = txs;

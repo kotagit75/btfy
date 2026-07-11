@@ -1,13 +1,11 @@
 use std::io;
 
-use openssl::error::ErrorStack;
-
 use crate::{
     blockchain::chain::Chain,
-    util::key::{SK, generate_pk_and_sk},
+    util::key::{SK, generate_sk},
 };
 
-const NODE_KEY_BITS: u32 = 512;
+const NODE_KEY_BITS: usize = 512;
 
 const NODE_DIR_PATH: &str = "node";
 const NODE_GITIGNORE_PATH: &str = "node/.gitignore";
@@ -43,23 +41,16 @@ pub fn load_or_generate_key() -> Result<SK, io::Error> {
         })
     } else {
         info!("generate node key");
-        match generate_key() {
-            Ok(sk) => {
-                save_key(&sk).inspect_err(|err| {
-                    error!("failed to save node key: {}", err);
-                })?;
-                Ok(sk)
-            }
-            Err(err) => {
-                error!("failed to generate node key: {}", err);
-                Err(err.into())
-            }
-        }
+        let sk = generate_key();
+        save_key(&sk).inspect_err(|err| {
+            error!("failed to save node key: {}", err);
+        })?;
+        Ok(sk)
     }
 }
 
-pub fn generate_key() -> Result<SK, ErrorStack> {
-    generate_pk_and_sk(NODE_KEY_BITS).map(|(_, sk)| sk)
+pub fn generate_key() -> SK {
+    generate_sk(NODE_KEY_BITS)
 }
 
 pub fn read_key() -> Result<SK, io::Error> {

@@ -100,11 +100,7 @@ fn init_state() -> Option<State> {
         return None;
     };
     info!("initializing state");
-    let Ok(state) = state::State::new(sk, chain) else {
-        error!("failed to initialize state");
-        return None;
-    };
-    Some(state)
+    Some(state::State::new(sk, chain))
 }
 
 async fn init_p2p_and_api(state_rx: watch::Receiver<State>, event_tx: mpsc::Sender<Command>) -> () {

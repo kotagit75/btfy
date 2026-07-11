@@ -1,6 +1,5 @@
 use std::fmt::{self, Debug, Display};
 
-use openssl::error::ErrorStack;
 use serde::{Deserialize, Serialize};
 use vdf::InvalidIterations;
 
@@ -13,7 +12,7 @@ use crate::{
     util::{
         hash::{Hashed, hash},
         key::{PK, SK},
-        signature::Signature,
+        signature::SignatureWrapper,
         vdf::{solution_to_string, solve, verify_solution},
     },
 };
@@ -29,12 +28,12 @@ pub struct Block {
     pub vdf_solution: Vec<u8>,
     pub previous_hash: Hashed,
     pub issuer: Address,
-    pub signature: Signature,
+    pub signature: SignatureWrapper,
     pub hash: Hashed,
 }
 
 impl Block {
-    pub fn new(blockdata: &BlockData, vdf_solution: Vec<u8>, signature: Signature) -> Self {
+    pub fn new(blockdata: &BlockData, vdf_solution: Vec<u8>, signature: SignatureWrapper) -> Self {
         let hash = calculate_hash(blockdata, &vdf_solution, signature.clone());
         Self {
             index: blockdata.index,
@@ -52,12 +51,12 @@ impl Block {
         blockdata: &BlockData,
         vdf_solution: Vec<u8>,
         sk: &SK,
-    ) -> Result<Self, ErrorStack> {
-        Ok(Self::new(
+    ) -> Self {
+        Self::new(
             blockdata,
             vdf_solution.clone(),
-            create_block_signature(blockdata, &vdf_solution, sk)?,
-        ))
+            create_block_signature(blockdata, &vdf_solution, sk),
+        )
     }
     pub fn verify_signature(&self) -> bool {
         self.issuer.verify(
@@ -163,7 +162,11 @@ impl<'a> Display for BlockData<'a> {
     }
 }
 
-pub fn calculate_hash(blockdata: &BlockData, vdf_solution: &[u8], signature: Signature) -> Hashed {
+pub fn calculate_hash(
+    blockdata: &BlockData,
+    vdf_solution: &[u8],
+    signature: SignatureWrapper,
+) -> Hashed {
     hash(
         format!(
             "{}{}{:?}",
@@ -181,11 +184,7 @@ fn block_to_buf_for_signature(blockdata: &BlockData, vdf_solution: &[u8]) -> Vec
         .to_vec()
 }
 
-fn create_block_signature(
-    blockdata: &BlockData,
-    vdf_solution: &[u8],
-    sk: &SK,
-) -> Result<Signature, ErrorStack> {
+fn create_block_signature(blockdata: &BlockData, vdf_solution: &[u8], sk: &SK) -> SignatureWrapper {
     let data = block_to_buf_for_signature(blockdata, vdf_solution);
     sk.sign(&data)
 }
@@ -203,7 +202,7 @@ pub fn genesis_block() -> Block {
         previous_hash: [0; 32],
         issuer: &pk,
     };
-    Block::new(&blockdata, Vec::new(), Vec::new())
+    Block::new(&blockdata, Vec::new(), SignatureWrapper::default())
 }
 
 fn block_to_buf_for_vdf(blockdata: &BlockData) -> Vec<u8> {
@@ -217,13 +216,14 @@ pub fn solve_block_vdf(blockdata: &BlockData) -> Result<Vec<u8>, InvalidIteratio
 mod tests {
     use crate::{
         blockchain::transaction::{TransactionIn, TransactionOut, coinbase_transaction},
-        util::key::generate_pk_and_sk,
+        util::key::generate_sk,
     };
 
     use super::*;
 
     fn keypair() -> (Address, SK) {
-        let (pk, sk) = generate_pk_and_sk(512).unwrap();
+        let sk = generate_sk(512);
+        let pk = sk.to_pk();
         (pk, sk)
     }
 
@@ -242,8 +242,7 @@ mod tests {
             vec![TransactionIn { unspent_id: 1 }],
             2,
             &sk,
-        )
-        .unwrap();
+        );
 
         let prev = vec![UnspentTransaction {
             id: 1,
@@ -259,7 +258,7 @@ mod tests {
             vdf_solution: vec![],
             previous_hash: [0; 32],
             issuer: miner.clone(),
-            signature: vec![],
+            signature: SignatureWrapper::default(),
             hash: [1; 32],
         };
 
@@ -281,7 +280,7 @@ mod tests {
             vdf_solution: vec![],
             previous_hash: [0; 32],
             issuer: miner,
-            signature: vec![],
+            signature: SignatureWrapper::default(),
             hash: [1; 32],
         };
 
