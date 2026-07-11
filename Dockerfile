@@ -29,4 +29,4 @@ EXPOSE 8080 62697
 
 VOLUME ["/app/node"]
 
-CMD ["btfy"]
+CMD ["btfy", "--mining", "--beacon-cmd", "python3", "--beacon-cmd", "example/open-meteo.py"]
