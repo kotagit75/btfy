@@ -2,7 +2,14 @@ use geojson::{FeatureCollection, GeometryValue};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
+    process::Stdio,
     sync::{LazyLock, Mutex},
+};
+use tokio::{
+    io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
+    process::{Child, ChildStdin, ChildStdout, Command},
+    sync::Mutex as AsyncMutex,
+    time::timeout,
 };
 
 use crate::{CONFIG, util::hash::Hashed};
@@ -76,31 +83,98 @@ static LOCATIONS_LOCATIONS: LazyLock<Vec<geojson::Position>> = LazyLock::new(|| 
         .collect()
 });
 
-const TEMPERATURE_SERVER_URL: &str = "http://localhost:8000/";
+#[derive(Debug, Deserialize)]
+struct BeaconResponse {
+    temperature: i32,
+}
 
-async fn get_temperature(lon: f64, lat: f64, timestamp: i64) -> Option<i32> {
-    let result = reqwest::Client::new()
-        .get(TEMPERATURE_SERVER_URL)
-        .timeout(std::time::Duration::from_secs(CONFIG.args.beacon_timeout))
-        .query(&[
-            ("lat", lat.to_string()),
-            ("lon", lon.to_string()),
-            ("timestamp", timestamp.to_string()),
-        ])
-        .send()
-        .await;
-    match result {
-        // Record the temperature as an integer by multiplying the value (up to one decimal places) by 10.
-        Ok(res) => res
-            .json::<f32>()
-            .await
-            .ok()
-            .map(|t| (t * 10.0).round() as i32),
-        Err(err) => {
-            error!("failed to retrieve the temperature: {}", err);
-            None
+struct BeaconProcess {
+    _child: Child,
+    stdin: ChildStdin,
+    stdout: BufReader<ChildStdout>,
+}
+
+impl BeaconProcess {
+    fn spawn() -> Option<Self> {
+        let command = &CONFIG.args.beacon_cmd;
+        if command.is_empty() {
+            error!("beacon command is not configured");
+            return None;
         }
+
+        let mut child = Command::new(&command[0]);
+        child
+            .args(&command[1..])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::inherit());
+
+        let mut child = match child.spawn() {
+            Ok(child) => child,
+            Err(err) => {
+                error!("failed to start beacon process: {}", err);
+                return None;
+            }
+        };
+
+        let Some(stdin) = child.stdin.take() else {
+            error!("failed to open beacon process stdin");
+            return None;
+        };
+        let Some(stdout) = child.stdout.take() else {
+            error!("failed to open beacon process stdout");
+            return None;
+        };
+
+        Some(Self {
+            _child: child,
+            stdin,
+            stdout: BufReader::new(stdout),
+        })
     }
+
+    async fn get_temperature(&mut self, lat: f64, lon: f64, timestamp: i64) -> Option<i32> {
+        let timeout_duration = std::time::Duration::from_secs(CONFIG.args.beacon_timeout);
+
+        timeout(timeout_duration, async {
+            self.stdin
+                .write_all(format!("{} {} {}\n", lat, lon, timestamp).as_bytes())
+                .await
+                .ok()?;
+            self.stdin.flush().await.ok()?;
+
+            let mut line = String::new();
+            let read = self.stdout.read_line(&mut line).await.ok()?;
+            if read == 0 {
+                return None;
+            }
+
+            serde_json::from_str::<BeaconResponse>(line.trim())
+                .ok()
+                .map(|r| r.temperature)
+        })
+        .await
+        .ok()
+        .flatten()
+    }
+}
+
+static BEACON_PROCESS: LazyLock<AsyncMutex<Option<BeaconProcess>>> =
+    LazyLock::new(|| AsyncMutex::new(None));
+
+async fn get_temperature(lat: f64, lon: f64, timestamp: i64) -> Option<i32> {
+    let mut guard = BEACON_PROCESS.lock().await;
+    if guard.is_none() {
+        *guard = BeaconProcess::spawn();
+    }
+    let result = match guard.as_mut() {
+        Some(process) => process.get_temperature(lat, lon, timestamp).await,
+        None => None,
+    };
+    if result.is_none() {
+        *guard = None;
+    }
+    result
 }
 
 fn choose_locations(latest_block_hash: &Hashed) -> Vec<geojson::Position> {
@@ -121,7 +195,7 @@ pub async fn get_beacon(latest_block_hash: &Hashed, timestamp: i64) -> Option<Be
     let mut temperatures: Vec<i32> = Vec::new();
     for (i, pos) in locations.iter().enumerate() {
         info!("getting temperature for location {}", i);
-        if let Some(temp) = get_temperature(pos[0], pos[1], timestamp).await {
+        if let Some(temp) = get_temperature(pos[1], pos[0], timestamp).await {
             temperatures.push(temp);
         } else {
             error!("failed to get temperature for location {}", i);

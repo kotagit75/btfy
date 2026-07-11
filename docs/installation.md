@@ -11,22 +11,12 @@ cd btfy
 ```
 
 ### Create a script to retrieve the temperature
-Create a script. This script retrieves the latitude ,longitude and timestamp and returns the temperature at that location as server. It doesn't matter how you implement it.
+Create a script. This script reads latitude, longitude, and timestamp from stdin and writes the temperature to stdout as JSON. It doesn't matter how you implement it.
 Even without using an API, it is possible to conduct observations by placing sensors on-site, for example.
 [Learn more examples](./temperature_script_example.md)
 
 ### Run
-
-First, let’s run the script for retrieving temperature data that we created in the previous chapter.
+Run btfy.
 ```bash
-# Example
-python3 examples/open-meteo.py
-```
-Next, run btfy.
-```bash
-cargo run --release -- --mining
-```
-You can run these two commands together using the following command:
-```bash
-./commands/run.sh example/open-meteo.py
+cargo run --release -- --mining --beacon-cmd python3 --beacon-cmd example/open-meteo.py
 ```

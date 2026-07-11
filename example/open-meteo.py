@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import json
+import sys
 import urllib.request
 from datetime import datetime, timezone
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import urlencode
 
 OPEN_METEO_BASE = "https://api.open-meteo.com/v1/forecast"
 
@@ -50,48 +50,15 @@ def select_temperature(data: dict, ts: int) -> float:
     return float(temps[best_i])
 
 
-class Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        u = urlparse(self.path)
-        if u.path != "/":
-            self.send_response(404)
-            self.end_headers()
-            return
-
-        qs = parse_qs(u.query)
-        lat = (qs.get("lat") or [""])[0]
-        lon = (qs.get("lon") or [""])[0]
-        ts_s = (qs.get("timestamp") or ["0"])[0]
-
-        try:
-            ts = int(ts_s)
-            if not lat or not lon:
-                raise ValueError("missing latitude/longitude")
-
-            data = fetch_open_meteo(lat, lon)
-            temp = select_temperature(data, ts)
-
-            body = (str(temp)).encode("utf-8")
-            self.send_response(200)
-            self.send_header("Content-Type", "text/plain; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-        except Exception as e:
-            body = (f"error: {e}").encode("utf-8")
-            self.send_response(400)
-            self.send_header("Content-Type", "text/plain; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-
-
 def main():
-    host = "127.0.0.1"
-    port = 8000
-    httpd = ThreadingHTTPServer((host, port), Handler)
-    print(f"temperature server: http://{host}:{port}/")
-    httpd.serve_forever()
+    for line in sys.stdin:
+        req = line.strip().split()
+        lat = float(req[0])
+        lon = float(req[1])
+        ts = int(req[2])
+        data = fetch_open_meteo(str(lat), str(lon))
+        temp = select_temperature(data, ts)
+        print(json.dumps({"temperature": int(round(temp * 10))}), flush=True)
 
 
 if __name__ == "__main__":

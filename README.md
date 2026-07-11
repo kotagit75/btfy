@@ -91,7 +91,7 @@ This project should currently be considered experimental and not production-read
 sudo apt -y install openssl
 git clone https://github.com/kotagit75/btfy.git
 cd btfy
-./commands/run.sh example/open-meteo.py
+cargo run --release -- --mining --beacon-cmd python3 --beacon-cmd example/open-meteo.py
 ```
 
 [Detailed Installation Instructions](docs/installation.md)
@@ -109,8 +109,8 @@ docker run -p 8080:8080 -p 62697:62697 -p 8000:8000 --network=host btfy:latest
 # run
 cargo run --release
 
-# run and mine blocks
-cargo run --release -- --mining
+# run and mine blocks with beacon provider
+cargo run --release -- --mining --beacon-cmd python3 --beacon-cmd example/open-meteo.py
 
 # display help
 cargo run --release -- --help

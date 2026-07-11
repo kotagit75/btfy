@@ -139,6 +139,10 @@ struct Args {
     /// The timeout for API requests in seconds
     #[arg(short, long, default_value = "5")]
     beacon_timeout: u64,
+
+    /// Beacon provider command to run over stdio
+    #[arg(long = "beacon-cmd", num_args = 1.., value_name = "CMD")]
+    beacon_cmd: Vec<String>,
 }
 #[derive(Debug, Clone, Deserialize)]
 pub struct InternalConfig {
