@@ -1,3 +1,4 @@
+use bitcode::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -5,17 +6,17 @@ use crate::{
     util::{key::SK, signature::SignatureWrapper},
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Encode, Decode)]
 pub struct TransactionOut {
     pub address: Address,
     pub amount: u64,
 }
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Encode, Decode)]
 pub struct TransactionIn {
     pub unspent_id: u64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Encode, Decode)]
 pub struct Transaction {
     pub sender: Address,
     pub out: Vec<TransactionOut>,
@@ -24,7 +25,7 @@ pub struct Transaction {
     pub signature: SignatureWrapper,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Encode, Decode)]
 pub struct UnspentTransaction {
     pub id: u64,
     pub address: Address,

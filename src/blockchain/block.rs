@@ -1,5 +1,6 @@
 use std::fmt::{self, Debug, Display};
 
+use bitcode::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 use vdf::InvalidIterations;
 
@@ -19,7 +20,7 @@ use crate::{
 
 pub const MAX_TRANSACTIONS_PER_BLOCK: usize = 100;
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, Encode, Decode)]
 pub struct Block {
     pub index: u64,
     pub timestamp: i64,

@@ -1,3 +1,4 @@
+use bitcode::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -16,7 +17,7 @@ use crate::{
 // For blocks older than CHECKPOINT_DEPTH, temperature verification is omitted.
 pub const CHECKPOINT_DEPTH: usize = 600;
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, Encode, Decode)]
 pub struct Chain {
     pub blocks: Vec<Block>,
 }

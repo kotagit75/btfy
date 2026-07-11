@@ -1,3 +1,4 @@
+use bitcode::{Decode, Encode};
 use rsa::pkcs1v15::{Signature, VerifyingKey};
 use rsa::sha2::Sha256;
 use rsa::signature::{SignatureEncoding, Verifier};
@@ -6,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::util::key::{PK, SK};
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default, Encode, Decode)]
 pub struct SignatureWrapper(Vec<u8>);
 
 pub fn sign(data: &[u8], sk: SK) -> SignatureWrapper {

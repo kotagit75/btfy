@@ -73,9 +73,9 @@ pub fn load_or_generate_chain() -> Result<Chain, io::Error> {
     load_chain()
 }
 pub fn load_chain() -> Result<Chain, io::Error> {
-    std::fs::read(NODE_CHAIN_PATH).and_then(|s| rmp_serde::from_slice(&s).map_err(io::Error::other))
+    std::fs::read(NODE_CHAIN_PATH).and_then(|s| bitcode::decode(&s).map_err(io::Error::other))
 }
 pub fn save_chain(chain: &Chain) -> Result<(), io::Error> {
-    let buf = rmp_serde::to_vec(chain).map_err(io::Error::other)?;
+    let buf = bitcode::encode(chain);
     std::fs::write(NODE_CHAIN_PATH, buf)
 }

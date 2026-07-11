@@ -1,3 +1,4 @@
+use bitcode::{Decode, Encode};
 use rsa::{
     RsaPrivateKey, RsaPublicKey,
     pkcs1::{DecodeRsaPrivateKey, DecodeRsaPublicKey, EncodeRsaPrivateKey, EncodeRsaPublicKey},
@@ -7,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::util::signature::{SignatureWrapper, sign, verify};
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash, Encode, Decode)]
 pub struct PK {
     pub der: String,
 }
@@ -30,7 +31,7 @@ impl PK {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Encode, Decode)]
 pub struct SK {
     pub der: String,
 }

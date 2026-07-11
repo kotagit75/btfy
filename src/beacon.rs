@@ -1,3 +1,4 @@
+use bitcode::{Decode, Encode};
 use geojson::{FeatureCollection, GeometryValue};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -14,7 +15,7 @@ use tokio::{
 
 use crate::{CONFIG, util::hash::Hashed};
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, Encode, Decode)]
 pub struct Beacon {
     pub values: Vec<i32>,
 }
