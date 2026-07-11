@@ -88,7 +88,6 @@ This project should currently be considered experimental and not production-read
 
 ## 🚀 Quick Start
 ```bash
-sudo apt -y install openssl
 git clone https://github.com/kotagit75/btfy.git
 cd btfy
 cargo run --release -- --mining --beacon-cmd python3 --beacon-cmd example/open-meteo.py

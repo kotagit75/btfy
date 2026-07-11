@@ -1,8 +1,5 @@
 ### Installation
 ```bash
-# Install openssl
-sudo apt -y install openssl
-
 # Clone the repository (or Download ZIP)
 git clone https://github.com/kotagit75/btfy.git
 
