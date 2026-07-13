@@ -4,7 +4,8 @@ use crate::{
     blockchain::{
         address::Address,
         chain::Chain,
-        transaction::{Transaction, transaction_to_unspent_ids, transactions_to_unspent_ids},
+        transaction::Transaction,
+        utxo::{transaction_to_unspent_ids, transactions_to_unspent_ids},
     },
     p2p::Peer,
     util::key::SK,

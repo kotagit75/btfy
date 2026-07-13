@@ -1,7 +1,8 @@
 use crate::{
     blockchain::{
         address::{Address, is_valid_address},
-        transaction::{Transaction, TransactionOut},
+        transaction::Transaction,
+        utxo::TransactionOut,
     },
     util::signature::SignatureWrapper,
 };

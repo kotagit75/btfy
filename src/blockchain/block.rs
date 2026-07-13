@@ -7,9 +7,8 @@ use vdf::InvalidIterations;
 use crate::{
     beacon::Beacon,
     blockchain::{
-        address::Address,
-        coinbase::is_valid_coinbase_transaction,
-        transaction::{Transaction, UnspentTransaction},
+        address::Address, coinbase::is_valid_coinbase_transaction, transaction::Transaction,
+        utxo::UnspentTransaction,
     },
     util::{
         hash::{Hashed, hash},
@@ -270,7 +269,7 @@ mod tests {
     use crate::{
         blockchain::{
             coinbase::coinbase_transaction,
-            transaction::{TransactionIn, TransactionOut},
+            utxo::{TransactionIn, TransactionOut},
         },
         util::key::generate_sk,
     };
