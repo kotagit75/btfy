@@ -5,7 +5,7 @@ use crate::{
     beacon::{Beacon, BeaconCache, BeaconKey, is_valid_beacon},
     blockchain::{
         address::Address,
-        block::{Block, BlockData, genesis_block, solve_block_vdf},
+        block::{Block, BlockData, BlockDataOwned, genesis_block},
         transaction::{
             Transaction, UnspentTransaction, coinbase_transaction, flex_unspent_transactions,
             get_transaction_out, transactions_to_unspent_ids,
@@ -42,14 +42,13 @@ impl Chain {
         }
     }
 
-    pub fn generate_next_block(
+    pub fn generate_next_block_data(
         &self,
-        sk: &SK,
         issuer: &Address,
         beacon: Beacon,
         transactions_without_coinbase: Vec<Transaction>,
         next_timestamp: i64,
-    ) -> Block {
+    ) -> BlockDataOwned {
         let previous_block: Block = self.get_latest_block();
         let next_index: u64 = previous_block.index + 1;
         let transactions = [coinbase_transaction(issuer, next_index)]
@@ -57,19 +56,24 @@ impl Chain {
             .chain(&transactions_without_coinbase)
             .cloned()
             .collect::<Vec<Transaction>>();
-        let block_data = BlockData::new(
+        BlockData::new(
             next_index,
             next_timestamp,
             &transactions,
             &beacon,
             issuer,
             previous_block.hash,
-        );
+        )
+        .to_owned()
+    }
 
-        info!("start calculating vdf solution");
-        let vdf_solution = solve_block_vdf(&block_data).unwrap();
-        info!("completed calculating vdf solution");
-        Block::new_with_creating_signature(&block_data, vdf_solution, sk)
+    pub fn generate_next_block(
+        &self,
+        sk: &SK,
+        vdf_solution: Vec<u8>,
+        block_data: BlockDataOwned,
+    ) -> Block {
+        Block::new_with_creating_signature(&block_data.as_borrowed(), vdf_solution, sk)
     }
 
     pub fn is_valid(&self, cache: &dyn BeaconCache) -> bool {

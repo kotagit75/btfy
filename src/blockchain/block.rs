@@ -163,6 +163,57 @@ impl<'a> Display for BlockData<'a> {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub struct BlockDataOwned {
+    pub index: u64,
+    pub timestamp: i64,
+    pub transactions: Vec<Transaction>,
+    pub beacon: Beacon,
+    pub issuer: Address,
+    pub previous_hash: Hashed,
+}
+
+impl std::fmt::Display for BlockDataOwned {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}{}{:?}{:?}{:?}{:?}",
+            self.index,
+            self.timestamp,
+            self.transactions,
+            self.beacon,
+            self.issuer,
+            self.previous_hash
+        )
+    }
+}
+
+// BlockData<'a> に変換メソッドを追加
+impl<'a> BlockData<'a> {
+    pub fn to_owned(&self) -> BlockDataOwned {
+        BlockDataOwned {
+            index: self.index,
+            timestamp: self.timestamp,
+            transactions: self.transactions.to_vec(), // Transaction は Clone である前提
+            beacon: self.beacon.clone(),
+            issuer: self.issuer.clone(),
+            previous_hash: self.previous_hash,
+        }
+    }
+}
+impl BlockDataOwned {
+    pub fn as_borrowed(&self) -> BlockData<'_> {
+        BlockData::new(
+            self.index,
+            self.timestamp,
+            &self.transactions,
+            &self.beacon,
+            &self.issuer,
+            self.previous_hash,
+        )
+    }
+}
+
 pub fn calculate_hash(
     blockdata: &BlockData,
     vdf_solution: &[u8],
@@ -209,8 +260,8 @@ pub fn genesis_block() -> Block {
 fn block_to_buf_for_vdf(blockdata: &BlockData) -> Vec<u8> {
     blockdata.to_string().as_bytes().to_vec()
 }
-pub fn solve_block_vdf(blockdata: &BlockData) -> Result<Vec<u8>, InvalidIterations> {
-    solve(block_to_buf_for_vdf(blockdata).as_slice())
+pub fn solve_block_vdf(blockdata: &BlockDataOwned) -> Result<Vec<u8>, InvalidIterations> {
+    solve(block_to_buf_for_vdf(&blockdata.as_borrowed()).as_slice())
 }
 
 #[cfg(test)]

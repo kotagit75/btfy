@@ -4,7 +4,7 @@ use crate::{
     beacon::{BeaconCache, get_beacon, prefetch_beacon},
     blockchain::{
         address::{Address, is_valid_address},
-        block::{Block, MAX_TRANSACTIONS_PER_BLOCK},
+        block::{Block, MAX_TRANSACTIONS_PER_BLOCK, solve_block_vdf},
         chain::{CHECKPOINT_DEPTH, Chain},
         transaction::Transaction,
     },
@@ -274,13 +274,26 @@ pub async fn run_effect(state: State, effect: Effect) -> Vec<Event> {
                 return vec![Event::MineBlock];
             };
             let now = time::Instant::now();
-            let block = state.chain.generate_next_block(
-                &state.secret_key,
+
+            let block_data = state.chain.generate_next_block_data(
                 &state.address,
                 beacon,
                 transactions,
                 next_timestamp,
             );
+            let block_data_clone = block_data.clone();
+            info!("start calculating vdf solution");
+            let vdf_solution =
+                tokio::task::spawn_blocking(move || solve_block_vdf(&block_data_clone))
+                    .await
+                    .unwrap()
+                    .unwrap();
+            info!("completed calculating vdf solution");
+
+            let block =
+                state
+                    .chain
+                    .generate_next_block(&state.secret_key, vdf_solution, block_data);
             info!(
                 "completed generate next block: {}ms",
                 now.elapsed().as_millis()
