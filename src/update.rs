@@ -315,7 +315,7 @@ mod tests {
         blockchain::{
             block::{Block, genesis_block},
             chain::Chain,
-            transaction::coinbase_transaction,
+            coinbase::coinbase_transaction,
         },
         state::State,
         util::{

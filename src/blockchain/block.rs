@@ -8,7 +8,8 @@ use crate::{
     beacon::Beacon,
     blockchain::{
         address::Address,
-        transaction::{Transaction, UnspentTransaction, is_valid_coinbase_transaction},
+        coinbase::is_valid_coinbase_transaction,
+        transaction::{Transaction, UnspentTransaction},
     },
     util::{
         hash::{Hashed, hash},
@@ -267,7 +268,10 @@ pub fn solve_block_vdf(blockdata: &BlockDataOwned) -> Result<Vec<u8>, InvalidIte
 #[cfg(test)]
 mod tests {
     use crate::{
-        blockchain::transaction::{TransactionIn, TransactionOut, coinbase_transaction},
+        blockchain::{
+            coinbase::coinbase_transaction,
+            transaction::{TransactionIn, TransactionOut},
+        },
         util::key::generate_sk,
     };
 

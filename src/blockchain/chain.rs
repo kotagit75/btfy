@@ -6,9 +6,10 @@ use crate::{
     blockchain::{
         address::Address,
         block::{Block, BlockData, BlockDataOwned, genesis_block},
+        coinbase::coinbase_transaction,
         transaction::{
-            Transaction, UnspentTransaction, coinbase_transaction, flex_unspent_transactions,
-            get_transaction_out, transactions_to_unspent_ids,
+            Transaction, UnspentTransaction, flex_unspent_transactions, get_transaction_out,
+            transactions_to_unspent_ids,
         },
     },
     util::key::SK,
@@ -253,7 +254,8 @@ mod tests {
     use super::*;
     use crate::beacon::{Beacon, InMemoryBeaconCache};
     use crate::blockchain::block::{Block, genesis_block};
-    use crate::blockchain::transaction::{TransactionIn, coinbase_transaction};
+    use crate::blockchain::coinbase::coinbase_transaction;
+    use crate::blockchain::transaction::TransactionIn;
     use crate::util::key::{SK, generate_sk};
     use crate::util::signature::SignatureWrapper;
 
