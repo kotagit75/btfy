@@ -6,14 +6,12 @@ use std::{
 use axum::{
     Router,
     extract::{self, Path},
-    http::{HeaderValue, StatusCode},
+    http::StatusCode,
     response,
     routing::{get, post},
 };
-use reqwest::Method;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, oneshot, watch};
-use tower_http::cors::{Any, CorsLayer};
 
 use crate::{
     CONFIG,
@@ -57,12 +55,6 @@ async fn dispatch_event(
 }
 
 pub async fn init_api(event_tx: mpsc::Sender<Command>, state_rx: watch::Receiver<State>) {
-    let allowed_origin = format!("http://localhost:{}", CONFIG.args.cors_allow_port);
-    let cors = CorsLayer::new()
-        .allow_origin([allowed_origin.parse::<HeaderValue>().unwrap()])
-        .allow_methods([Method::GET, Method::POST])
-        .allow_headers(Any);
-
     let app = Router::new()
         .route("/health", get(handle_query_health))
         .route("/address", get(handle_query_address))
@@ -71,15 +63,13 @@ pub async fn init_api(event_tx: mpsc::Sender<Command>, state_rx: watch::Receiver
         .route("/balance/{address}", get(handle_query_balance_with_address))
         .route("/tx", post(handle_command_transaction))
         .route("/peer", post(handle_command_peer))
-        .with_state((event_tx, state_rx))
-        .layer(cors);
+        .with_state((event_tx, state_rx));
     let addr = SocketAddr::new(
         std::net::IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
         CONFIG.args.api_port,
     );
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     info!("API server is running on http://{}/", addr);
-    info!("API server allows CORS for {}", allowed_origin);
     axum::serve(listener, app).await.unwrap();
 }
 

@@ -128,10 +128,6 @@ struct Args {
     #[arg(short, long, default_value = "8080")]
     api_port: u16,
 
-    /// The port to allow CORS requests from
-    #[arg(short, long, default_value = "3000")]
-    cors_allow_port: u16,
-
     /// The timeout for API requests in seconds
     #[arg(short, long, default_value = "5")]
     beacon_timeout: u64,
