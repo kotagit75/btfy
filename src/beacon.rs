@@ -137,7 +137,7 @@ impl BeaconProcess {
         })
     }
 
-    async fn get_temperature(&mut self, lat: f64, lon: f64, timestamp: i64) -> Option<i32> {
+    async fn fetch_temperature(&mut self, lat: f64, lon: f64, timestamp: i64) -> Option<i32> {
         let timeout_duration = std::time::Duration::from_secs(CONFIG.args.beacon_timeout);
 
         timeout(timeout_duration, async {
@@ -166,13 +166,13 @@ impl BeaconProcess {
 static BEACON_PROCESS: LazyLock<AsyncMutex<Option<BeaconProcess>>> =
     LazyLock::new(|| AsyncMutex::new(None));
 
-async fn get_temperature(lat: f64, lon: f64, timestamp: i64) -> Option<i32> {
+async fn fetch_temperature(lat: f64, lon: f64, timestamp: i64) -> Option<i32> {
     let mut guard = BEACON_PROCESS.lock().await;
     if guard.is_none() {
         *guard = BeaconProcess::spawn();
     }
     let result = match guard.as_mut() {
-        Some(process) => process.get_temperature(lat, lon, timestamp).await,
+        Some(process) => process.fetch_temperature(lat, lon, timestamp).await,
         None => None,
     };
     if result.is_none() {
@@ -193,7 +193,7 @@ fn choose_locations(latest_block_hash: &Hashed) -> Vec<geojson::Position> {
         .collect()
 }
 
-pub async fn get_beacon(latest_block_hash: &Hashed, timestamp: i64) -> Option<Beacon> {
+pub async fn fetch_beacon(latest_block_hash: &Hashed, timestamp: i64) -> Option<Beacon> {
     let locations: Vec<geojson::Position> = choose_locations(latest_block_hash);
     info!("start getting beacon");
     let mut temperatures: Vec<i32> = Vec::new();
@@ -201,7 +201,7 @@ pub async fn get_beacon(latest_block_hash: &Hashed, timestamp: i64) -> Option<Be
     let pb = get_progress_bar(locations.len() as u64);
 
     for (i, pos) in locations.iter().enumerate() {
-        if let Some(temp) = get_temperature(pos[1], pos[0], timestamp).await {
+        if let Some(temp) = fetch_temperature(pos[1], pos[0], timestamp).await {
             temperatures.push(temp);
             pb.inc(1);
         } else {
@@ -228,7 +228,7 @@ pub async fn prefetch_beacon(
     if cache.get(&key).is_some() {
         return true;
     }
-    let Some(beacon) = get_beacon(latest_block_hash, timestamp).await else {
+    let Some(beacon) = fetch_beacon(latest_block_hash, timestamp).await else {
         return false;
     };
     cache.insert(key, beacon);
