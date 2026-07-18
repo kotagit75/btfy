@@ -117,6 +117,9 @@ cargo run --release -- --help
 # check health
 ./commands/btfy-cli health
 
+# get address
+./commands/btfy-cli getaddress
+
 # get balance
 ./commands/btfy-cli getbalance
 ./commands/btfy-cli getbalancebyaddress [address]
