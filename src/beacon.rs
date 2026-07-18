@@ -13,7 +13,10 @@ use tokio::{
     time::timeout,
 };
 
-use crate::{CONFIG, util::hash::Hashed};
+use crate::{
+    CONFIG,
+    util::{hash::Hashed, progressbar::get_progress_bar},
+};
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, Encode, Decode)]
 pub struct Beacon {
@@ -194,10 +197,13 @@ pub async fn get_beacon(latest_block_hash: &Hashed, timestamp: i64) -> Option<Be
     let locations: Vec<geojson::Position> = choose_locations(latest_block_hash);
     info!("start getting beacon");
     let mut temperatures: Vec<i32> = Vec::new();
+
+    let pb = get_progress_bar(locations.len() as u64);
+
     for (i, pos) in locations.iter().enumerate() {
-        info!("getting temperature for location {}", i);
         if let Some(temp) = get_temperature(pos[1], pos[0], timestamp).await {
             temperatures.push(temp);
+            pb.inc(1);
         } else {
             error!("failed to get temperature for location {}", i);
             return None;
