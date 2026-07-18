@@ -4,6 +4,9 @@ case "$1" in
 health)
     curl -X GET localhost:8080/health
     ;;
+getaddress)
+    curl -X GET localhost:8080/address
+    ;;
 getbalance)
     curl -X GET localhost:8080/balance
     ;;
