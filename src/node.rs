@@ -26,12 +26,12 @@ pub fn load_or_generate_key() -> Result<SK, io::Error> {
     info!("create node directory");
     if std::fs::metadata(NODE_DIR_PATH).is_err() {
         create_node_dir()
-            .inspect(|err| error!("failed to create the node directory: {:?}", err))?;
+            .inspect_err(|err| error!("failed to create the node directory: {:?}", err))?;
     }
     info!("create gitignore");
     if std::fs::metadata(NODE_GITIGNORE_PATH).is_err() {
         create_gitignore()
-            .inspect(|err| error!("failed to create the gitignore file: {:?}", err))?;
+            .inspect_err(|err| error!("failed to create the gitignore file: {:?}", err))?;
     }
 
     if std::fs::metadata(NODE_KEY_PATH).is_ok() {

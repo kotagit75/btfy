@@ -100,7 +100,7 @@ cargo run --release -- --mining --beacon-cmd python3 --beacon-cmd example/open-m
 git clone https://github.com/kotagit75/btfy.git
 cd btfy
 docker build ./ -t btfy
-docker run -p 8080:8080 -p 62697:62697 -p 8000:8000 --network=host btfy:latest
+docker run -p 8080:8080 -p 62697:62697 --network=host -t btfy:latest
 ```
 
 ### Usage
