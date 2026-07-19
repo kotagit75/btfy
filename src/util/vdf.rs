@@ -1,4 +1,4 @@
-use vdf::{PietrzakVDF, PietrzakVDFParams, VDF, VDFParams};
+use vdf_rs::{PietrzakVDF, PietrzakVDFParams, VDF, VDFParams};
 
 use crate::CONFIG;
 
@@ -14,7 +14,7 @@ pub fn verify_solution(challenge: &[u8], solution: &[u8]) -> bool {
         .is_ok()
 }
 
-pub fn solve(challenge: &[u8]) -> Result<Vec<u8>, vdf::InvalidIterations> {
+pub fn solve(challenge: &[u8]) -> Result<Vec<u8>, vdf_rs::InvalidIterations> {
     create_vdf().solve(challenge, CONFIG.internal_config.vdf_difficulty)
 }
 

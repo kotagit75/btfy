@@ -2,7 +2,7 @@ use std::fmt::{self, Debug, Display};
 
 use bitcode::{Decode, Encode};
 use serde::{Deserialize, Serialize};
-use vdf::InvalidIterations;
+use vdf_rs::InvalidIterations;
 
 use crate::{
     beacon::Beacon,

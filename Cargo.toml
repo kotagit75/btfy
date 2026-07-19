@@ -20,9 +20,9 @@ serde_json = "1.0.149"
 sha2 = "0.11.0"
 simple_logger = "5.2.0"
 tokio = { version = "1.51.0", features = ["full"] }
-vdf = "0.1.0"
 bitcode = "0.6.9"
 indicatif = "0.18.6"
+vdf-rs = "0.2.0"
 
 [profile.release]
 opt-level = "z"
