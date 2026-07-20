@@ -2,17 +2,22 @@
 
 set -euo pipefail
 
-OPEN_METEO_BASE="https://api.open-meteo.com/v1/forecast"
 USER_AGENT="btfy-temperature-server/1.0"
 
 fetch_open_meteo() {
     local lat="$1"
     local lon="$2"
+    local ts="$3"
 
-    curl -sS -A "$USER_AGENT" -G "$OPEN_METEO_BASE" \
+    local day
+    day=$(date -u -d "@$ts" +%F)
+
+    curl -sS -A "$USER_AGENT" -G \
+        "https://archive-api.open-meteo.com/v1/archive" \
         --data-urlencode "latitude=$lat" \
         --data-urlencode "longitude=$lon" \
-        --data-urlencode "past_days=10" \
+        --data-urlencode "start_date=$day" \
+        --data-urlencode "end_date=$day" \
         --data-urlencode "hourly=temperature_2m"
 }
 
@@ -42,7 +47,7 @@ select_temperature() {
 }
 
 while read -r lat lon ts; do
-    json=$(fetch_open_meteo "$lat" "$lon")
+    json=$(fetch_open_meteo "$lat" "$lon" "$ts")
     temp=$(select_temperature "$json" "$ts")
 
     temp10=$(awk -v t="$temp" 'BEGIN { printf("%d", int(t*10+0.5)) }')

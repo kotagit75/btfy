@@ -1,69 +1,64 @@
 # Temperature Script Examples
 ## Example 1 - Use API
 
-```python
-#!/usr/bin/env python3
-import json
-import sys
-import urllib.request
-from datetime import datetime, timezone
-from urllib.parse import urlencode
+```bash
+#!/usr/bin/env bash
 
-OPEN_METEO_BASE = "https://api.open-meteo.com/v1/forecast"
+set -euo pipefail
 
+USER_AGENT="btfy-temperature-server/1.0"
 
-def fetch_open_meteo(lat: str, lon: str) -> dict:
-    params = {
-        "latitude": lat,
-        "longitude": lon,
-        "past_days": "10",
-        "hourly": "temperature_2m",
-    }
-    url = OPEN_METEO_BASE + "?" + urlencode(params)
-    req = urllib.request.Request(
-        url, headers={"User-Agent": "btfy-temperature-server/1.0"}
-    )
-    with urllib.request.urlopen(req, timeout=20) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+fetch_open_meteo() {
+    local lat="$1"
+    local lon="$2"
+    local ts="$3"
 
+    local day
+    day=$(date -u -d "@$ts" +%F)
 
-def time_to_epoch_seconds(t: str) -> int:
-    dt = datetime.strptime(t, "%Y-%m-%dT%H:%M").replace(tzinfo=timezone.utc)
-    return int(dt.timestamp())
+    curl -sS -A "$USER_AGENT" -G \
+        "https://archive-api.open-meteo.com/v1/archive" \
+        --data-urlencode "latitude=$lat" \
+        --data-urlencode "longitude=$lon" \
+        --data-urlencode "start_date=$day" \
+        --data-urlencode "end_date=$day" \
+        --data-urlencode "hourly=temperature_2m"
+}
 
+select_temperature() {
+    local json="$1"
+    local ts="$2"
 
-def select_temperature(data: dict, ts: int) -> float:
-    hourly = data.get("hourly") or {}
-    times = hourly.get("time") or []
-    temps = hourly.get("temperature_2m") or []
-    if not times or not temps or len(times) != len(temps):
-        raise ValueError("invalid open-meteo response")
+    jq -r \
+        --argjson target "$ts" '
+        .hourly
+        | [ range(0; (.time|length)) as $i
+            | {
+                temp: .temperature_2m[$i],
+                diff: (
+                    (
+                        .time[$i]
+                        + ":00Z"
+                        | fromdateiso8601
+                    ) - $target
+                    | if . < 0 then -. else . end
+                )
+            }
+          ]
+        | min_by(.diff)
+        | .temp
+        ' <<<"$json"
+}
 
-    best_i = 0
-    best_diff = None
-    for i, t in enumerate(times):
-        te = time_to_epoch_seconds(t)
-        diff = abs(te - ts)
-        if best_diff is None or diff < best_diff:
-            best_diff = diff
-            best_i = i
+while read -r lat lon ts; do
+    json=$(fetch_open_meteo "$lat" "$lon" "$ts")
+    temp=$(select_temperature "$json" "$ts")
 
-    return float(temps[best_i])
+    temp10=$(awk -v t="$temp" 'BEGIN { printf("%d", int(t*10+0.5)) }')
 
+    echo "{\"temperature\": $temp10}"
+done
 
-def main():
-    for line in sys.stdin:
-        req = line.strip().split()
-        lat = float(req[0])
-        lon = float(req[1])
-        ts = int(req[2])
-        data = fetch_open_meteo(str(lat), str(lon))
-        temp = select_temperature(data, ts)
-        print(json.dumps({"temperature": int(round(temp * 10))}), flush=True)
-
-
-if __name__ == "__main__":
-    main()
 ```
 
 ## Example 2 - Use sensors
