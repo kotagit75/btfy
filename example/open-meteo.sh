@@ -52,5 +52,5 @@ while read -r lat lon ts; do
 
     temp10=$(awk -v t="$temp" 'BEGIN { printf("%d", int(t*10+0.5)) }')
 
-    echo "{temperature:$temp10}"
+    echo "{\"temperature\": $temp10}"
 done
