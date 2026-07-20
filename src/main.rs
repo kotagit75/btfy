@@ -16,6 +16,7 @@ use tokio::sync::{mpsc, watch};
 
 use crate::{
     beacon::InMemoryBeaconCache,
+    config::{P2P_PORT, VDF_DIFFICULTY},
     node::save_chain,
     p2p::Peer,
     state::State,
@@ -25,6 +26,7 @@ use crate::{
 pub mod api;
 pub mod beacon;
 pub mod blockchain;
+pub mod config;
 pub mod node;
 pub mod p2p;
 pub mod state;
@@ -146,22 +148,14 @@ pub struct Config {
     internal_config: InternalConfig,
 }
 
-const INTERNAL_CONFIG_JSON: &str = include_str!("config.json");
 pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
     let args = Args::parse();
 
-    let internal_config: InternalConfig = match serde_json::from_str(INTERNAL_CONFIG_JSON) {
-        Ok(config) => config,
-        Err(e) => {
-            eprintln!("failed to parse internal config: {}", e);
-            InternalConfig {
-                p2p_port: 62697,
-                vdf_difficulty: 5295676,
-            }
-        }
-    };
     Config {
         args,
-        internal_config,
+        internal_config: InternalConfig {
+            p2p_port: P2P_PORT,
+            vdf_difficulty: VDF_DIFFICULTY,
+        },
     }
 });
