@@ -33,6 +33,10 @@ A Japanese article explaining Btfy can be found [here](https://zenn.dev/yuzu_mik
 - 🌍 Real-world entropy source from weather observations
 - 🔗 Hash-chain protection against replaying historical weather data
 
+## 🌱 Contribution to Environment and Society
+- Environment: By eliminating the energy-intensive computational race, we achieve low-power consensus building using weather data and VDF.
+- Society: Miners pay for weather APIs, creating a cycle that indirectly contributes to improving the accuracy of weather observation infrastructure and aiding in disaster prevention and mitigation.
+
 ## ⛅ Why Weather?
 Traditional Proof-of-Work systems consume large amounts of electricity to create a source of unpredictability that secures consensus.
 
