@@ -20,11 +20,6 @@ select_temperature() {
     local json="$1"
     local ts="$2"
 
-    if [[ "$ts" == "0" ]]; then
-        jq -r '.hourly.temperature_2m[-1]' <<<"$json"
-        return
-    fi
-
     jq -r \
         --argjson target "$ts" '
         .hourly

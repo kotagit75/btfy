@@ -35,9 +35,6 @@ def select_temperature(data: dict, ts: int) -> float:
     if not times or not temps or len(times) != len(temps):
         raise ValueError("invalid open-meteo response")
 
-    if ts == 0:
-        return float(temps[-1])
-
     best_i = 0
     best_diff = None
     for i, t in enumerate(times):
