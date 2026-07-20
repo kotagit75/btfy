@@ -109,6 +109,7 @@ docker run -p 8080:8080 -p 62697:62697 --network=host -t btfy:latest
 cargo run
 
 # run and mine blocks with beacon provider
+cargo run -- --mining --beacon-cmd example/dummy.sh
 cargo run -- --mining --beacon-cmd example/open-meteo.sh
 
 # display help
