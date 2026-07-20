@@ -17,7 +17,7 @@ def fetch_open_meteo(lat: str, lon: str) -> dict:
         "latitude": lat,
         "longitude": lon,
         "past_days": "10",
-        "hourly": "temperature_2m,relative_humidity_2m,wind_speed_10m",
+        "hourly": "temperature_2m",
     }
     url = OPEN_METEO_BASE + "?" + urlencode(params)
     req = urllib.request.Request(
