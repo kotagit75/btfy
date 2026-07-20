@@ -90,7 +90,7 @@ This project should currently be considered experimental and not production-read
 ```bash
 git clone https://github.com/kotagit75/btfy.git
 cd btfy
-cargo run --release -- --mining --beacon-cmd example/open-meteo.sh
+cargo run -- --mining --beacon-cmd example/open-meteo.sh
 ```
 
 [Detailed Installation Instructions](docs/installation.md)
@@ -106,13 +106,13 @@ docker run -p 8080:8080 -p 62697:62697 --network=host -t btfy:latest
 ### Usage
 ```bash
 # run
-cargo run --release
+cargo run
 
 # run and mine blocks with beacon provider
-cargo run --release -- --mining --beacon-cmd example/open-meteo.sh
+cargo run -- --mining --beacon-cmd example/open-meteo.sh
 
 # display help
-cargo run --release -- --help
+cargo run -- --help
 
 # check health
 ./commands/btfy-cli health
