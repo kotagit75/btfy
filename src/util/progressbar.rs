@@ -1,6 +1,6 @@
 use indicatif::{ProgressBar, ProgressStyle};
 
-pub fn get_progress_bar(len: u64) -> ProgressBar {
+pub fn create_progress_bar(len: u64) -> ProgressBar {
     let pb = ProgressBar::new(len);
     pb.set_style(
         ProgressStyle::with_template(

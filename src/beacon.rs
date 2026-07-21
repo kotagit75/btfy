@@ -15,7 +15,7 @@ use tokio::{
 
 use crate::{
     CONFIG,
-    util::{hash::Hashed, progressbar::get_progress_bar},
+    util::{hash::Hashed, progressbar::create_progress_bar},
 };
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, Encode, Decode)]
@@ -198,7 +198,7 @@ pub async fn fetch_beacon(latest_block_hash: &Hashed, timestamp: i64) -> Option<
     info!("start getting beacon");
     let mut temperatures: Vec<i32> = Vec::new();
 
-    let pb = get_progress_bar(locations.len() as u64);
+    let pb = create_progress_bar(locations.len() as u64);
 
     for (i, pos) in locations.iter().enumerate() {
         if let Some(temp) = fetch_temperature(pos[1], pos[0], timestamp).await {
