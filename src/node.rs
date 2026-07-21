@@ -13,13 +13,11 @@ const NODE_KEY_PATH: &str = "node/key.der";
 const NODE_CHAIN_PATH: &str = "node/chain";
 
 fn create_node_dir() -> Result<(), io::Error> {
-    std::fs::create_dir(NODE_DIR_PATH)?;
-    Ok(())
+    std::fs::create_dir(NODE_DIR_PATH)
 }
 
 fn create_gitignore() -> Result<(), io::Error> {
-    std::fs::write(NODE_GITIGNORE_PATH, format!("{}\n", NODE_KEY_PATH))?;
-    Ok(())
+    std::fs::write(NODE_GITIGNORE_PATH, format!("{}\n", NODE_KEY_PATH))
 }
 
 pub fn load_or_generate_key() -> Result<SK, io::Error> {
