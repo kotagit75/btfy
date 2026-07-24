@@ -149,6 +149,13 @@ cargo run -- --help
 
 ## 📍 Locations which is collected temperature data
 Btfy gets temperature data from multiple locations. They are currently placed in Japan. The locations are as follows:
+[View geojson](src/beacon/locations.geojson)
+
+![map1](assets/map1.png)
+![map2](assets/map2.png)
+![map3](assets/map3.png)
+![map4](assets/map4.png)
+![map5](assets/map5.png)
 
 |Name|Latitude|Longitude|
 |:-:|:-:|:-:|
@@ -185,12 +192,3 @@ Btfy gets temperature data from multiple locations. They are currently placed in
 |Kumamoto Airport|32.83497974|130.8588813|
 |Kagoshima Airport|31.80072839|130.7202485|
 |Naha Airport|26.19990739|127.6467932|
-
-
-[View geojson](src/beacon/locations.geojson)
-
-![map1](assets/map1.png)
-![map2](assets/map2.png)
-![map3](assets/map3.png)
-![map4](assets/map4.png)
-![map5](assets/map5.png)
