@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::key::{PK, SK};
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default, Encode, Decode)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, Default, Encode, Decode)]
 pub struct SignatureWrapper(Vec<u8>);
 
 pub fn sign(data: &[u8], sk: SK) -> SignatureWrapper {

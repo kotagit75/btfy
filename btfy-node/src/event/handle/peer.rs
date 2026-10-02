@@ -1,5 +1,5 @@
 use crate::{
-    event::effect::{Effect, when_changed},
+    effect::{Effect, when_changed},
     p2p::{P2PMessage, Peer},
     state::State,
 };

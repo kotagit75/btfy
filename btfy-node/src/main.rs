@@ -17,6 +17,7 @@ use tokio::sync::Mutex;
 pub mod api;
 pub mod chain_repository;
 pub mod config;
+pub mod effect;
 pub mod event;
 pub mod key_repository;
 pub mod node;

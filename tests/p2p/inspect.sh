@@ -66,7 +66,7 @@ main() {
   ensure_cmds
 
   log "Starting compose: $COMPOSE_FILE"
-  docker compose -f "$COMPOSE_FILE" up -d --build >/dev/null
+  docker compose -f "$COMPOSE_FILE" up -d --build
 
   log "Waiting for Node A and B health"
   wait_for_health "$NODE_A_API" || { log "Node A failed to become healthy"; docker compose -f "$COMPOSE_FILE" down -v; exit 1; }

@@ -1,8 +1,6 @@
 use crate::{
-    event::{
-        beacon::prefetch_chain_beacons,
-        effect::{Effect, when_changed},
-    },
+    effect::{Effect, when_changed},
+    event::beacon::prefetch_chain_beacons,
     p2p::{P2PMessage, Peer},
     state::State,
 };

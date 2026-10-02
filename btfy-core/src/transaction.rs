@@ -7,7 +7,7 @@ use crate::{
 };
 use btfy_util::{key::SK, signature::SignatureWrapper};
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Encode, Decode)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize, Encode, Decode)]
 pub struct Transaction {
     pub sender: Address,
     pub out: Vec<TransactionOut>,

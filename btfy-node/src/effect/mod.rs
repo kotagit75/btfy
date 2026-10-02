@@ -11,6 +11,8 @@ use crate::{
 use btfy_beacon::{fetch_beacon, provider::BeaconProvider};
 use btfy_core::{block::solve_block_vdf, transaction::Transaction};
 
+pub mod runner;
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Effect {
     None,

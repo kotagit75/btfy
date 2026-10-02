@@ -3,12 +3,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::{address::Address, transaction::Transaction};
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Encode, Decode)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq, Deserialize, Serialize, Encode, Decode)]
 pub struct TransactionOut {
     pub address: Address,
     pub amount: u64,
 }
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Encode, Decode)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize, Encode, Decode)]
 pub struct TransactionIn {
     pub unspent_id: u64,
 }

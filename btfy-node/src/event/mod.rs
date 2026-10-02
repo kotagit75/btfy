@@ -1,13 +1,11 @@
 use crate::{
     config::Config,
-    event::{
-        effect::Effect,
-        handle::{
-            miner::{handle_completed_mine_block, handle_mine_block},
-            p2p::handle_p2p_message,
-            peer::{handle_add_peer, handle_remove_peers},
-            transaction::handle_add_transaction,
-        },
+    effect::Effect,
+    event::handle::{
+        miner::{handle_completed_mine_block, handle_mine_block},
+        p2p::handle_p2p_message,
+        peer::{handle_add_peer, handle_remove_peers},
+        transaction::handle_add_transaction,
     },
     p2p::{P2PMessage, Peer},
     state::State,
@@ -18,7 +16,6 @@ use serde::{Deserialize, Serialize};
 
 pub mod beacon;
 pub mod command;
-pub mod effect;
 pub mod handle;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
